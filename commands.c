@@ -5,28 +5,28 @@
 
 #include "headers.h"
 
-void procesarComando(tList *L);
-
-
-void printLongStats(bool opacc, struct stat st){
+int printLongStats(bool opacc, struct stat st){
 	struct passwd *p;
 	struct group *g;
 	struct tm *t;
 
 	t = localtime((opacc) ? &st.st_atime : &st.st_mtime);
+	char *permisos = ConvierteModo2(st.st_mode);
+	permisos[0] = LetraTF(st.st_mode); 
+
+
 	printf("%04d/%02d/%02d-", t->tm_year+1900, t->tm_mon+1, t->tm_mday);
 	printf("%02d:%02d,", t->tm_hour, t->tm_min);
 	printf("%2ld ", st.st_nlink);
 	printf("(%lu)", st.st_ino);
 	printf("\t%s", ((p = getpwuid(st.st_uid)) == NULL) ? "???" : p->pw_name);
-	printf("\t%s\n", ((g = getgrgid(st.st_gid)) == NULL) ? "???" : g->gr_name);
+	printf("\t%s", ((g = getgrgid(st.st_gid)) == NULL) ? "???" : g->gr_name);
+	printf("\t%s", permisos);
 
-	// if link True :
-
+	return 0;
 }
 
-char LetraTF (mode_t m)
-{
+char LetraTF (mode_t m){
      switch (m&S_IFMT) { /*and bit a bit con los bits de formato,0170000 */
         case S_IFSOCK: return 's'; /*socket */
         case S_IFLNK: return 'l'; /*symbolic link*/
@@ -39,8 +39,7 @@ char LetraTF (mode_t m)
      }
 }
 
-char * ConvierteModo2 (mode_t m)
-{
+char * ConvierteModo2 (mode_t m){
     static char permisos[12];
     strcpy (permisos,"---------- ");
     
@@ -60,8 +59,6 @@ char * ConvierteModo2 (mode_t m)
     
     return permisos;
 }
-
-
 
 char* quitarSalto(char *str){
 	int length = strlen(str)-1;
@@ -98,13 +95,14 @@ int TrocearCadena(char * cadena, char * trozos[]) {
 	return i;
 }
 
-void cmdFin(tList *L) {
+int cmdFin(tList *L) {
 	deleteList(L);
 	printf(ROJO_T "\n[!] Saliendo de la shell ...\n\n" RESET);
 	exit(0);
+	return 0;
 }
 
-void cmdAutores() {
+int cmdAutores() {
 	int flagL=1, flagN=1;
 	
 	if (numtrozos >=2 && strcmp(trozos[1], "-n") == 0) flagL=0;
@@ -114,9 +112,11 @@ void cmdAutores() {
 		printf(VERDE_T "[+] autor 1: Alberto Fernández\n[+] autor 2: Juan Villaverde\n" RESET);
 	if (flagL)
 		printf(VERDE_T"[+] login 1: alberto.fernandezv\n[+] login 2: juan.villaverde.rodriguez\n" RESET);
+	
+	return 0;
 }
 
-void cmdPid() {
+int cmdPid() {
 	if (numtrozos == 1) {
 		printf(VERDE_T"pid de shell: %d\n"RESET, getpid());
 	}
@@ -126,9 +126,10 @@ void cmdPid() {
 	if (numtrozos >= 2 && strcmp(trozos[1], "-p") != 0) {
 		printf(VERDE_T"pid de shell: %d\n"RESET, getpid());
 	}
+	return 0;
 }
 
-void cmdFecha() {
+int cmdFecha() {
 	int flagD = 1, flagH = 1;
 	time_t tiempo;
 	struct tm *t;
@@ -136,7 +137,7 @@ void cmdFecha() {
 	if (numtrozos > 1 && strcmp(trozos[1], "-d") == 0) flagH = 0;
 	if (numtrozos > 1 && strcmp(trozos[1], "-h") == 0) flagD = 0;
 	
-	if (time(&tiempo) == -1) {perror("tiempo"); return; }
+	if (time(&tiempo) == -1) {perror("tiempo"); }
 	t = localtime(&tiempo);
 	if (numtrozos > 1 && strcmp(trozos[1], "-d") != 0)
 		if (numtrozos > 1 && strcmp(trozos[1], "-h") != 0)
@@ -146,11 +147,13 @@ void cmdFecha() {
 		printf(VERDE_T"%02d:%02d:%02d\n"RESET, t->tm_hour, t->tm_min, t->tm_sec);
 	if (flagD)
 		printf(VERDE_T"%02d/%02d/%04d\n"RESET, t->tm_mday, t->tm_mon +1, t->tm_year + 1900);
+	
+	return 0;
 }
 
-void cmdInfosis() {
+int cmdInfosis() {
 	struct utsname info[1];
-	if (uname(info) == -1) {perror("uname"); return; }
+	if (uname(info) == -1) {perror("uname"); }
 	else {
 		printf(VERDE_T"System name: %s\n"RESET, info->sysname);
 		printf(VERDE_T"Node name: %s\n"RESET, info->nodename);
@@ -158,9 +161,10 @@ void cmdInfosis() {
 		printf(VERDE_T"Version: %s\n"RESET, info->version);
 		printf(VERDE_T"Machine: %s\n"RESET, info->machine);
 	}
+	return 0;
 }
 
-void cmdAyuda() {
+int cmdAyuda() {
 	if (numtrozos == 1) {
 		printf(CYAN_T "[+] autores " AZUL_T "[-l|-n]\n"
 		CYAN_T"[+] pid "AZUL_T "[-p]\n"
@@ -196,9 +200,10 @@ void cmdAyuda() {
 		else
 			puts(ROJO_T"[+] Comando no reconocido ..."RESET);
 	}
+	return 0;
 }
 
-void cmdHist(tList *L) {
+int cmdHist(tList *L) {
 	int i=0, n;
 	char* comando;
 	tPosL pos;
@@ -218,9 +223,10 @@ void cmdHist(tList *L) {
 			i++;
 		}
 	}
+	return 0;
 }
 
-void cmdCarpeta() {
+int cmdCarpeta() {
 	char ruta[MAXTROZOS];
 
 	if (numtrozos == 1) {
@@ -232,13 +238,14 @@ void cmdCarpeta() {
 	else if (chdir(trozos[1]) == -1) {
 		perror("chdir"); 
 	}
+	return 0;
 }
 
-void cmdComando(tList *L) {
+int cmdComando(tList *L) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
-	comando = malloc(sizeof(char)*1024);
+	comando = malloc(sizeof(char)*MAX_SIZE);
 
 	tPosL pos;
 	for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
@@ -246,7 +253,7 @@ void cmdComando(tList *L) {
 	}
 	i--;
 
-	strncpy(comando, getItem(pos, *L), 1024);
+	strncpy(comando, getItem(pos, *L), MAX_SIZE);
 
 	if (numtrozos == 1 || n > i) {
 		printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
@@ -255,7 +262,7 @@ void cmdComando(tList *L) {
 
 	numtrozos = TrocearCadena(comando, trozos);
 	procesarComando(L);
-	
+	return 0;
 	
 } 
 
@@ -263,28 +270,144 @@ void cmdComando(tList *L) {
 // --------------------------------- P1 ----------------------------------------
 // -----------------------------------------------------------------------------
 
-
-void cmdStat(){
+// IMPORTANTE ACTUALIZAR COMANDO DE AYUDA CON LOS NUEVOS Y PONERLOS EN STRUCT
+// Pendiente cuando se imprimer es link pone la ruta absoluta y no la relativa
+int cmdStat(){
 
 	struct stat info;
-	bool lg, link, acc;
+	bool lg=false, link=false, acc=false;
+	char ruta[4096];
 
 	if (numtrozos == 1){
 		cmdCarpeta();
 	}else{
 		for(int i=1; i<numtrozos; i++){
-
-			stat(trozos[i], &info);
+	
 			if (strcmp(trozos[i],"-long") == 0){ lg = true; }
-			if (strcmp(trozos[i],"-acc") == 0){ acc = true; }
-			if (strcmp(trozos[i],"-link") == 0){ link = true; }
+			else if (strcmp(trozos[i],"-acc") == 0){ acc = true; }
+			else if (strcmp(trozos[i],"-link") == 0){ link = true; }
+		}
 
-			if (lg){ printLongStats(acc, info); }
-			printf("Caso general");
-			if (link){ printf("parte del link"); }
-
+		for(int i=1; i<numtrozos; i++){
+			char *cadena = trozos[i];
+			int ascii = cadena[0];
+			if(ascii ==  45){
+				continue;
+			}
+			lstat(trozos[i], &info);
+			if (lg){ printLongStats(acc, info); }		
+			printf("%6ld %s", info.st_size, trozos[i]);
+			if (link){
+				if(LetraTF(info.st_mode)== 'l'){
+					printf(" ->%s", (realpath(trozos[i], ruta) == NULL)?"":ruta); 
+				}
+			}
+			printf("\n");
 		}
 	}
+	return 0;
+}
+
+//falta reca y recb
+int cmdList(){
+	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=false;
+
+	DIR *d;
+	struct dirent *dir;
+
+	char ruta[4096];
+	struct stat info;
+
+	if (numtrozos == 1){
+		cmdCarpeta();
+	}else{
+		for(int i=1; i<numtrozos; i++){
+			if (strcmp(trozos[i],"-reca") == 0){ reca = true; }
+			else if (strcmp(trozos[i],"-recb") == 0){ recb = true; }
+			else if (strcmp(trozos[i],"-hid") == 0){ hid = true; }
+			else if (strcmp(trozos[i],"-long") == 0){ lg = true; }
+			else if (strcmp(trozos[i],"-link") == 0){ link = true; }
+			else if (strcmp(trozos[i],"-acc") == 0){ acc = true; }
+		}
+
+		for(int i=1; i<numtrozos; i++){
+			char *cadena = trozos[i];
+			if(cadena[0] ==  45){ // control de que no sea una de las flags
+				continue;
+			}
+
+			// intenta abrir el fichero o no exixste
+			//if(d = opendir(trozos[i]) == NULL){ printf("No es un directorio"); }
+			d = opendir(trozos[i]);
+			if(d){
+				printf("************%s\n", trozos[i]);
+				while((dir = readdir(d)) != NULL){
+		
+					if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+						lstat(dir->d_name, &info);
+						if (lg){ printLongStats(acc, info); }	
+						printf("%6ld %s\n", info.st_size, dir->d_name);
+						if (link)
+							if(LetraTF(info.st_mode)== 'l')
+								printf(" ->%s", (realpath(dir->d_name, ruta) == NULL)?"":ruta); 	
+					}
+
+					if(hid){
+						if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0){
+							if (lg){ printLongStats(acc, info); }	
+							printf("%6ld %s\n", info.st_size, dir->d_name);
+						}
+					}
+
+				}
+				closedir(d);
+			}
+		}
+	}
+	return 0;
+}
+
+int cmdCreate(){
+
+	if (numtrozos == 1){
+		cmdCarpeta();
+
+	}else{
+		char path[MAX_SIZE];
+		bool fichero = false;
+
+		getcwd(path, sizeof(path));
+		strcat(path, "/");
+
+		for(int i=1; i<numtrozos; i++)
+			if (strcmp(trozos[i],"-f") == 0){ fichero = true; }
+
+		if (fichero){ // fichero
+			char *nombre = trozos[2];
+			if(creat(strcat(path, nombre), 0666) == -1)
+				perror("creat");
+		}else{ //directorio
+			char *nombre = trozos[1];
+			if (mkdir(strcat(path, nombre), 0755) == -1){
+				perror("mkdir");
+			}
+		}
+	}
+	return 0;
+}
+
+int cmdBorrar(){
+
+	if (numtrozos == 1){
+		cmdCarpeta();
+	}else{
+		for(int i=1; i<numtrozos; i++){
+			if(remove(trozos[i]) != 0){
+				perror("remove");
+			}
+		}
+	}
+	return 0;
 }
 
 void procesarComando(tList *L){
@@ -309,6 +432,9 @@ cm_entrada cm_tabla[] = {
 	{"infosis", cmdInfosis},
 	{"ayuda", cmdAyuda},
 	{"stat", cmdStat},
+	{"list", cmdList},
+	{"create", cmdCreate},
+	{"delete", cmdBorrar},
 	{"fin", cmdFin},
 	{"salir", cmdFin},
 	{"bye", cmdFin},

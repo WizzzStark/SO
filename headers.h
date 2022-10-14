@@ -16,10 +16,13 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
+#include <dirent.h>
+#include <fcntl.h>
 
 #include "linked_list.h"
 
 #define MAXTROZOS 512
+#define MAX_SIZE 1024
 
 tComando linea;
 char *trozos[MAXTROZOS];
@@ -27,11 +30,14 @@ int numtrozos;
 
 typedef struct cm_entrada {
 	char *cm_nombre;
-	void (*cm_fun)();
+	int (*cm_fun)();
 }cm_entrada ;
 
 cm_entrada cm_tabla[];
 
+void procesarComando(tList *L);
+char LetraTF (mode_t m);
+char * ConvierteModo2 (mode_t m);
 
 #define RESET          "\x1b[0m"
 #define NEGRO_T        "\x1b[30m"
