@@ -347,13 +347,17 @@ int cmdList(){
 
 	tList directorios;
 	tPosL pos;
-	char* path;
 
-	DIR *d;
+	char *path;
+	char copia[MAX_SIZE];
+
+	DIR *d, *d2;
 	struct dirent *dir;
 
-	char ruta[4096];
+	char ruta[MAX_SIZE];
 	struct stat info;
+
+	bool primer_elemento = true;
 
 	if (numtrozos == 1){
 		cmdCarpeta();
@@ -374,10 +378,8 @@ int cmdList(){
 			}
 
 			//IMPLEMENTAR LAS FUNCIONESNUEVAS A AYUDA
-			//a partir de la primera carpeta pone los bytes mal por algun motivo
 
-			d = opendir(trozos[i]);
-			if(d){
+			if((d2 = opendir(trozos[i]))){
 
 				if (reca){
 					createEmptyList(&directorios);
@@ -398,35 +400,46 @@ int cmdList(){
 					pos = first(directorios);
 					while (pos != LNULL) {
 						path = getItem(pos, directorios);
+						if((d = opendir(path))){
 
-						d = opendir(path);
+							printf("************%s\n", path);
+							while((dir = readdir(d)) != NULL){ 
 
-						printf("************%s\n", path);
-						while((dir = readdir(d)) != NULL){
-				
-							if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
-								lstat(dir->d_name, &info);
-								if (lg){ printLongStats(acc, info); }	
-								printf("%6ld %s\n", info.st_size, dir->d_name);
-								if (link)
-									if(LetraTF(info.st_mode)== 'l')
-										printf(" ->%s", (realpath(dir->d_name, ruta) == NULL)?"":ruta); 	
-							}
+								strcpy(copia, path);
 
-							//comprobacion de que empiece por punto
-							if(hid){
-								if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0){
+								if (primer_elemento){
+									lstat(dir->d_name, &info); 
+								}else{							 
+									strcat(copia, "/");
+									strcat(copia, dir->d_name);
+									lstat(copia, &info);
+								}
+					
+								if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+
 									if (lg){ printLongStats(acc, info); }	
 									printf("%6ld %s\n", info.st_size, dir->d_name);
+									if (link)
+										if(LetraTF(info.st_mode)== 'l')
+											printf(" ->%s", (realpath(dir->d_name, ruta) == NULL)?"":ruta); 	
 								}
+
+								if(hid){
+									if (dir->d_name[0] == '.'){
+										if (lg){ printLongStats(acc, info); }	
+										printf("%6ld %s\n", info.st_size, dir->d_name);
+									}
+								}
+
 							}
-
+							pos = next(pos, directorios);
+							closedir(d);
+							primer_elemento = false;
 						}
-						closedir(d);
-
-						pos = next(pos, directorios);
 					}
 				}
+				deleteList(&directorios);
+				closedir(d2);
 			}else{
 				perror("opendir");
 			}
