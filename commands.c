@@ -270,6 +270,39 @@ int cmdComando(tList *L) {
 // --------------------------------- P1 ----------------------------------------
 // -----------------------------------------------------------------------------
 
+int reca_func(tList *directorios, char* dir_actual){
+
+	char path[1000];
+	struct dirent *dir;
+	DIR *d = opendir(dir_actual);
+
+	if (d){
+
+		if(isEmptyList(*directorios)){
+			insertItem(dir_actual,first(*directorios),directorios);
+
+		}else{
+			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
+		}
+
+		while((dir = readdir(d)) != NULL){
+
+
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+
+				strcpy(path, dir_actual);
+				strcat(path, "/");
+				strcat(path, dir->d_name);
+
+				reca_func(directorios, path);
+			}
+		}
+		closedir(d);
+	}
+
+	return 0;
+}
+
 // IMPORTANTE ACTUALIZAR COMANDO DE AYUDA CON LOS NUEVOS Y PONERLOS EN STRUCT
 // Pendiente cuando se imprimer es link pone la ruta absoluta y no la relativa
 int cmdStat(){
@@ -308,9 +341,13 @@ int cmdStat(){
 	return 0;
 }
 
-//falta reca y recb
+//falta recb
 int cmdList(){
 	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=false;
+
+	tList directorios;
+	tPosL pos;
+	char* path;
 
 	DIR *d;
 	struct dirent *dir;
@@ -322,8 +359,8 @@ int cmdList(){
 		cmdCarpeta();
 	}else{
 		for(int i=1; i<numtrozos; i++){
-			if (strcmp(trozos[i],"-reca") == 0){ reca = true; }
-			else if (strcmp(trozos[i],"-recb") == 0){ recb = true; }
+			if (strcmp(trozos[i],"-reca") == 0){ reca = true; recb = false; }
+			else if (strcmp(trozos[i],"-recb") == 0){ recb = true; reca = false; }
 			else if (strcmp(trozos[i],"-hid") == 0){ hid = true; }
 			else if (strcmp(trozos[i],"-long") == 0){ lg = true; }
 			else if (strcmp(trozos[i],"-link") == 0){ link = true; }
@@ -336,31 +373,62 @@ int cmdList(){
 				continue;
 			}
 
-			// intenta abrir el fichero o no exixste
-			//if(d = opendir(trozos[i]) == NULL){ printf("No es un directorio"); }
+			//IMPLEMENTAR LAS FUNCIONESNUEVAS A AYUDA
+			//a partir de la primera carpeta pone los bytes mal por algun motivo
+
 			d = opendir(trozos[i]);
 			if(d){
-				printf("************%s\n", trozos[i]);
-				while((dir = readdir(d)) != NULL){
-		
-					if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
-						lstat(dir->d_name, &info);
-						if (lg){ printLongStats(acc, info); }	
-						printf("%6ld %s\n", info.st_size, dir->d_name);
-						if (link)
-							if(LetraTF(info.st_mode)== 'l')
-								printf(" ->%s", (realpath(dir->d_name, ruta) == NULL)?"":ruta); 	
-					}
 
-					if(hid){
-						if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0){
-							if (lg){ printLongStats(acc, info); }	
-							printf("%6ld %s\n", info.st_size, dir->d_name);
-						}
+				if (reca){
+					createEmptyList(&directorios);
+					reca_func(&directorios, trozos[i]);
+				//}else if (reca){
+				//	createEmptyList(&directorios);
+				//	reca_func(&directorios, trozos[i]);
+				}else{
+					createEmptyList(&directorios);
+					if(isEmptyList(directorios)){
+						insertItem(trozos[i],first(directorios),&directorios);
+					}else{
+						insertItem(trozos[i],next(last(directorios), directorios),&directorios);
 					}
-
 				}
-				closedir(d);
+
+				if (!isEmptyList(directorios)) {
+					pos = first(directorios);
+					while (pos != LNULL) {
+						path = getItem(pos, directorios);
+
+						d = opendir(path);
+
+						printf("************%s\n", path);
+						while((dir = readdir(d)) != NULL){
+				
+							if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+								lstat(dir->d_name, &info);
+								if (lg){ printLongStats(acc, info); }	
+								printf("%6ld %s\n", info.st_size, dir->d_name);
+								if (link)
+									if(LetraTF(info.st_mode)== 'l')
+										printf(" ->%s", (realpath(dir->d_name, ruta) == NULL)?"":ruta); 	
+							}
+
+							//comprobacion de que empiece por punto
+							if(hid){
+								if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0){
+									if (lg){ printLongStats(acc, info); }	
+									printf("%6ld %s\n", info.st_size, dir->d_name);
+								}
+							}
+
+						}
+						closedir(d);
+
+						pos = next(pos, directorios);
+					}
+				}
+			}else{
+				perror("opendir");
 			}
 		}
 	}
@@ -371,7 +439,6 @@ int cmdCreate(){
 
 	if (numtrozos == 1){
 		cmdCarpeta();
-
 	}else{
 		char path[MAX_SIZE];
 		bool fichero = false;
