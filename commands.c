@@ -269,40 +269,6 @@ int cmdComando(tList *L) {
 // -----------------------------------------------------------------------------
 // --------------------------------- P1 ----------------------------------------
 // -----------------------------------------------------------------------------
-
-int reca_func(tList *directorios, char* dir_actual){
-
-	char path[1000];
-	struct dirent *dir;
-	DIR *d = opendir(dir_actual);
-
-	if (d){
-
-		if(isEmptyList(*directorios)){
-			insertItem(dir_actual,first(*directorios),directorios);
-
-		}else{
-			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
-		}
-
-		while((dir = readdir(d)) != NULL){
-
-
-			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
-
-				strcpy(path, dir_actual);
-				strcat(path, "/");
-				strcat(path, dir->d_name);
-
-				reca_func(directorios, path);
-			}
-		}
-		closedir(d);
-	}
-
-	return 0;
-}
-
 // IMPORTANTE ACTUALIZAR COMANDO DE AYUDA CON LOS NUEVOS Y PONERLOS EN STRUCT
 // Pendiente cuando se imprimer es link pone la ruta absoluta y no la relativa
 int cmdStat(){
@@ -341,9 +307,73 @@ int cmdStat(){
 	return 0;
 }
 
+int reca_func(tList *directorios, char* dir_actual){
+
+	char path[1000];
+	struct dirent *dir;
+	DIR *d = opendir(dir_actual);
+
+	if (d){
+
+		if(isEmptyList(*directorios)){
+			insertItem(dir_actual,first(*directorios),directorios);
+
+		}else{
+			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
+		}
+
+		while((dir = readdir(d)) != NULL){
+
+
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+
+				strcpy(path, dir_actual);
+				strcat(path, "/");
+				strcat(path, dir->d_name);
+
+				reca_func(directorios, path);
+			}
+		}
+		closedir(d);
+	}
+
+	return 0;
+}
+
+int recb_func(tList *directorios, char* dir_actual) {
+	char path[1000];
+	struct dirent *dir;
+	DIR *d = opendir(dir_actual);
+
+	if (d){
+		while((dir = readdir(d)) != NULL){
+
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+
+				strcpy(path, dir_actual);
+				strcat(path, "/");
+				strcat(path, dir->d_name);
+
+				recb_func(directorios, path);
+			}
+		}
+		closedir(d);
+
+		if(isEmptyList(*directorios)){
+			insertItem(dir_actual,first(*directorios),directorios);
+
+		}else{
+			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
+		}
+	}
+
+	return 0;
+
+}
+
 //falta recb
 int cmdList(){
-	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=false;
+	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=true;
 
 	tList directorios;
 	tPosL pos;
@@ -381,12 +411,12 @@ int cmdList(){
 
 			if((d2 = opendir(trozos[i]))){
 
-				if (reca){
+				if (reca) {
 					createEmptyList(&directorios);
 					reca_func(&directorios, trozos[i]);
-				//}else if (reca){
-				//	createEmptyList(&directorios);
-				//	reca_func(&directorios, trozos[i]);
+				}else if (recb){
+					createEmptyList(&directorios);
+					recb_func(&directorios, trozos[i]);
 				}else{
 					createEmptyList(&directorios);
 					if(isEmptyList(directorios)){
@@ -400,6 +430,10 @@ int cmdList(){
 					pos = first(directorios);
 					while (pos != LNULL) {
 						path = getItem(pos, directorios);
+						if (path[2] == '.' && !hid) {
+							pos = next(pos, directorios);
+							continue;
+						}
 						if((d = opendir(path))){
 
 							printf("************%s\n", path);
@@ -414,9 +448,7 @@ int cmdList(){
 									strcat(copia, dir->d_name);
 									lstat(copia, &info);
 								}
-					
-								if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
-
+								if (dir->d_name[0] != '.'){
 									if (lg){ printLongStats(acc, info); }	
 									printf("%6ld %s\n", info.st_size, dir->d_name);
 									if (link)
