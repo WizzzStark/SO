@@ -371,7 +371,6 @@ int recb_func(tList *directorios, char* dir_actual) {
 
 }
 
-//falta recb
 int cmdList(){
 	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=true;
 
@@ -480,8 +479,41 @@ int cmdList(){
 	return 0;
 }
 
-int cmdCreate(){
+int delRec(char * path) {
+	struct dirent *dir;
+	DIR *d;
+	char pathCopy[1000];
 
+	d = opendir(path);
+
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+				strcpy(pathCopy, path);
+				strcat(pathCopy, "/");
+				strcat(pathCopy, dir->d_name);
+				delRec(pathCopy);
+			}
+		}
+		rmdir(path);
+		closedir(d);
+
+	}
+	else {
+		unlink(path);
+	}
+
+	return 0;
+}
+
+int cmdDelTree() {
+	for (int i = 1; i < numtrozos; i++) 
+		delRec(trozos[i]);
+
+	return 0;
+}
+
+int cmdCreate(){
 	if (numtrozos == 1){
 		cmdCarpeta();
 	}else{
@@ -551,5 +583,6 @@ cm_entrada cm_tabla[] = {
 	{"salir", cmdFin},
 	{"bye", cmdFin},
 	{"comando", cmdComando},
+	{"deltree", cmdDelTree},
 	{NULL, NULL}
 };
