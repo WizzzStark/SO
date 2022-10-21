@@ -253,7 +253,6 @@ int cmdComando(tList *L) {
 // --------------------------------- P1 ----------------------------------------
 // -----------------------------------------------------------------------------
 int reca_func(tList *directorios, char* dir_actual){
-
 	char path[1000];
 	struct dirent *dir;
 	DIR *d = opendir(dir_actual);
@@ -268,7 +267,6 @@ int reca_func(tList *directorios, char* dir_actual){
 		}
 
 		while((dir = readdir(d)) != NULL){
-
 
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
 
@@ -383,7 +381,7 @@ int cmdStat(){
 }
 
 int cmdList(){
-	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=true;
+	bool lg=false, link=false, acc=false, hid=false, reca=false, recb=false;
 
 	tList directorios;
 	tPosL pos;
@@ -416,8 +414,6 @@ int cmdList(){
 			if(cadena[0] ==  45){ // control de que no sea una de las flags
 				continue;
 			}
-
-			//IMPLEMENTAR LAS FUNCIONESNUEVAS A AYUDA
 
 			if((d2 = opendir(trozos[i]))){
 
@@ -478,12 +474,15 @@ int cmdList(){
 							closedir(d);
 							primer_elemento = false;
 						}
+						else {
+							perror("opendir");
+						}
 					}
 				}
 				deleteList(&directorios);
 				closedir(d2);
 			}else{
-				perror("opendir");
+				cmdStat();
 			}
 		}
 	}

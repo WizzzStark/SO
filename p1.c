@@ -12,6 +12,7 @@ int main() {
 
 	createEmptyList(&L);
 
+
 	while(1) {
 		printf(AMARILLO_T"># "RESET);
 		if (fgets(linea, 1024, stdin) == NULL) { 
