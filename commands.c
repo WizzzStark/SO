@@ -226,35 +226,29 @@ int cmdCarpeta() {
 
 int cmdComando(tList *L) {
 	int n = atoi(trozos[1]); 
-	int i= 1;
+	int i= 0;
 	char* comando = NULL;
 	comando = malloc(sizeof(char)*MAX_SIZE);
-	printf("NUMTROZOS %d", numtrozos);
-
-
 	tPosL pos;
-	if (!isEmptyList(*L)) {
+
+	if (numtrozos == 1 || n >= i || n<0) {
+		printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
+		free(comando);
+		return 0;
+	}else{
 		for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
 			i++;
 		}
-		i--;
+		//i--;
 
 		strncpy(comando, getItem(pos, *L), MAX_SIZE);
-
-		if (numtrozos == 1 || n > i) {
-			printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
-			free(comando);
-			return 0;
-		}
-
 		numtrozos = TrocearCadena(comando, trozos);
-    	free(comando);
-		procesarComando(L);
+
 	}
-	else {
-		printf(ROJO_T"La lista no tiene comandos\n"RESET);
-	}
-	
+
+
+	free(comando);
+	procesarComando(L);
 	return 0;
 	
 } 
@@ -346,7 +340,7 @@ int delRec(char * path) {
 
 	}
 	else {
-		unlink(path);
+		if(unlink(path) == -1) perror("unlink");
 	}
 
 	return 0;
