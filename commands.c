@@ -168,37 +168,20 @@ int cmdAyuda() {
 	if (numtrozos == 1) {
 		printf(CYAN_T "[+] autores " AZUL_T "[-l|-n]\n"
 		CYAN_T"[+] pid "AZUL_T "[-p]\n"
-		CYAN_T"[+] carpeta " AZUL_T"[direct]\n"
+		CYAN_T"[+] carpeta " AZUL_T"<path>\n"
 		CYAN_T"[+] fecha "AZUL_T "[-d|-h]\n"
 		CYAN_T"[+] hist " AZUL_T"[-c|-N]\n"
 		CYAN_T"[+] comando " AZUL_T"N\n"
 		CYAN_T"[+] infosis\n"
-		CYAN_T"[+] ayuda " AZUL_T"[cmd]\n"
+		CYAN_T"[+] ayuda " AZUL_T"<cmd>\n"
 		CYAN_T"[+] fin\n"
 		CYAN_T"[+] salir\n"
-		CYAN_T"[+] bye\n" RESET);
-	}
-	else if (numtrozos > 1) {
-		if (strcmp(trozos[1], "autores") == 0)
-			puts(AZUL_T"[+] Imprime los nombres y logins del programa autores. autores -l: imprime solo los logins y autores -n imprime solo los nombres."RESET);
-		else if (strcmp(trozos[1], "pid") == 0)
-			puts(AZUL_T"[+] Imprime el pid del proceso que ejecuta el shell. pid -p: imprime el pid del proceso padre del shell"RESET);
-		else if (strcmp(trozos[1], "carpeta") == 0)
-			puts(AZUL_T"[+] Cambia el directorio actual de trabajo del shell a la nueva dirección indicada. Si se invoca sin argumentos, devuelve el directorio actual"RESET);
-		else if (strcmp(trozos[1], "fecha") == 0)
-			puts(AZUL_T"[+] Sin argumentos imprime la fecha y la hora actual. fecha -d: imprime solo la fecha actual. fecha -h imprime solo la hora actual"RESET);
-		else if (strcmp(trozos[1], "hist") == 0)
-			puts(AZUL_T"[+] hist: Imprime una lista de todos los comandos que se hayan usado. hist -c: Borra el historial de comandos. hist -N: Imprime los primero N comandos."RESET);
-		else if (strcmp(trozos[1], "comando") == 0)
-			puts(AZUL_T"[+] Repite el comando numero N del historial de comandos"RESET);
-		else if (strcmp(trozos[1], "infosis") == 0)
-			puts(AZUL_T"[+] Imprime informacion sobre la maquina que está ejecutando el shell"RESET);
-		else if (strcmp(trozos[1], "ayuda") == 0)
-			puts(AZUL_T"[+] ayuda: muestra una lista de todos los comandos disponibles. ayuda -[cmd]: Muestra una breve descripcion sobre como usar el comando [cmd]"RESET);
-		else if ((strcmp(trozos[1], "fin") == 0) || (strcmp(trozos[1], "salir") == 0) || (strcmp(trozos[1], "bye") == 0))
-			puts(AZUL_T"[+] Finaliza el shell"RESET);
-		else
-			puts(ROJO_T"[+] Comando no reconocido ..."RESET);
+		CYAN_T"[+] bye\n" 
+		CYAN_T"[+] stat " AZUL_T"[-long] [-acc] [-link]\n"
+		CYAN_T"[+] list " AZUL_T"[-long] [-acc] [-link] [-hid] [-reca] [-recb]\n"
+		CYAN_T"[+] create " AZUL_T"[-f] <path1> <path2>...\n"
+		CYAN_T"[+] delete " AZUL_T"<path1> <path2>...\n"
+		CYAN_T"[+] deltree " AZUL_T"<path1> <path2>...\n"RESET);
 	}
 	return 0;
 }
@@ -269,44 +252,6 @@ int cmdComando(tList *L) {
 // -----------------------------------------------------------------------------
 // --------------------------------- P1 ----------------------------------------
 // -----------------------------------------------------------------------------
-// IMPORTANTE ACTUALIZAR COMANDO DE AYUDA CON LOS NUEVOS Y PONERLOS EN STRUCT
-// Pendiente cuando se imprimer es link pone la ruta absoluta y no la relativa
-int cmdStat(){
-
-	struct stat info;
-	bool lg=false, link=false, acc=false;
-	char ruta[4096];
-
-	if (numtrozos == 1){
-		cmdCarpeta();
-	}else{
-		for(int i=1; i<numtrozos; i++){
-	
-			if (strcmp(trozos[i],"-long") == 0){ lg = true; }
-			else if (strcmp(trozos[i],"-acc") == 0){ acc = true; }
-			else if (strcmp(trozos[i],"-link") == 0){ link = true; }
-		}
-
-		for(int i=1; i<numtrozos; i++){
-			char *cadena = trozos[i];
-			int ascii = cadena[0];
-			if(ascii ==  45){
-				continue;
-			}
-			lstat(trozos[i], &info);
-			if (lg){ printLongStats(acc, info); }		
-			printf("%6ld %s", info.st_size, trozos[i]);
-			if (link){
-				if(LetraTF(info.st_mode)== 'l'){
-					printf(" ->%s", (realpath(trozos[i], ruta) == NULL)?"":ruta); 
-				}
-			}
-			printf("\n");
-		}
-	}
-	return 0;
-}
-
 int reca_func(tList *directorios, char* dir_actual){
 
 	char path[1000];
@@ -369,6 +314,72 @@ int recb_func(tList *directorios, char* dir_actual) {
 
 	return 0;
 
+}
+
+int delRec(char * path) {
+	struct dirent *dir;
+	DIR *d;
+	char pathCopy[1000];
+
+	d = opendir(path);
+
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
+				strcpy(pathCopy, path);
+				strcat(pathCopy, "/");
+				strcat(pathCopy, dir->d_name);
+				delRec(pathCopy);
+			}
+		}
+		rmdir(path);
+		closedir(d);
+
+	}
+	else {
+		unlink(path);
+	}
+
+	return 0;
+}
+
+int cmdStat(){
+
+	struct stat info;
+	bool lg=false, link=false, acc=false;
+	char ruta[4096];
+
+	if (numtrozos == 1){
+		cmdCarpeta();
+	}else{
+		for(int i=1; i<numtrozos; i++){
+	
+			if (strcmp(trozos[i],"-long") == 0){ lg = true; }
+			else if (strcmp(trozos[i],"-acc") == 0){ acc = true; }
+			else if (strcmp(trozos[i],"-link") == 0){ link = true; }
+		}
+
+		for(int i=1; i<numtrozos; i++){
+			char *cadena = trozos[i];
+			int ascii = cadena[0];
+			if(ascii ==  45){
+				continue;
+			}
+			if (lstat(trozos[i], &info) == -1) perror("lstat");
+			else {
+				if (lg){ printLongStats(acc, info); }		
+				printf("%6ld %s", info.st_size, trozos[i]);
+				if (link){
+					if(LetraTF(info.st_mode)== 'l'){
+						printf(" ->%s", (realpath(trozos[i], ruta) == NULL)?"":ruta); 
+					}
+				}
+				printf("\n");
+			}
+			
+		}
+	}
+	return 0;
 }
 
 int cmdList(){
@@ -479,32 +490,7 @@ int cmdList(){
 	return 0;
 }
 
-int delRec(char * path) {
-	struct dirent *dir;
-	DIR *d;
-	char pathCopy[1000];
 
-	d = opendir(path);
-
-	if (d) {
-		while ((dir = readdir(d)) != NULL) {
-			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0){
-				strcpy(pathCopy, path);
-				strcat(pathCopy, "/");
-				strcat(pathCopy, dir->d_name);
-				delRec(pathCopy);
-			}
-		}
-		rmdir(path);
-		closedir(d);
-
-	}
-	else {
-		unlink(path);
-	}
-
-	return 0;
-}
 
 int cmdDelTree() {
 	for (int i = 1; i < numtrozos; i++) 
@@ -556,33 +542,49 @@ int cmdBorrar(){
 
 void procesarComando(tList *L){
 	for (int i = 0; ; i++) {
-			if (cm_tabla[i].cm_nombre==NULL) {
-				printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
-				break;
+			if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
+				if (cm_tabla[i].cm_nombre==NULL) {
+					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
+					break;
+				}
+				
+				if (strcmp(cm_tabla[i].cm_nombre, trozos[1]) == 0) {
+
+					printf(AZUL_T"%s\n"RESET, cm_tabla[i].ayuda);
+					break;
+				}	
 			}
-			else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-				cm_tabla[i].cm_fun(L);
-				break;
+			else {
+				if (cm_tabla[i].cm_nombre==NULL) {
+					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
+					break;
+				}
+				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
+
+					cm_tabla[i].cm_fun(L);
+					break;
+				}
 			}
+			
 		}
 }
-
+//stat dadasdas-> devuelve algo y deberia devolver perror
 cm_entrada cm_tabla[] = {
-	{"autores", cmdAutores},
-	{"pid", cmdPid},
-	{"carpeta", cmdCarpeta},
-	{"fecha", cmdFecha},
-	{"hist", cmdHist},
-	{"infosis", cmdInfosis},
-	{"ayuda", cmdAyuda},
-	{"stat", cmdStat},
-	{"list", cmdList},
-	{"create", cmdCreate},
-	{"delete", cmdBorrar},
-	{"fin", cmdFin},
-	{"salir", cmdFin},
-	{"bye", cmdFin},
-	{"comando", cmdComando},
-	{"deltree", cmdDelTree},
+	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
+	{"pid", cmdPid, "[+] pid : Imprime el pid del proceso que ejecuta el shell. pid -p: Imprime el pid del proceso padre del shell."},
+	{"carpeta", cmdCarpeta, "[+] carpeta: Devuelve el directorio actual. carpeta <path>: Cambia el directorio actual de trabajo del shell a <path>."},
+	{"fecha", cmdFecha, "[+] fecha: Imprime la fecha y la hora actual. fecha -d: Imprime solo la fecha actual. fecha -h: Imprime solo la hora actual."},
+	{"hist", cmdHist, "[+] hist: Imprime una lista de todos los comandos que se hayan usado. hist -c: Borra el historial de comandos. hist -N: Imprime los primero N comandos."},
+	{"infosis", cmdInfosis, "[+] Imprime informacion sobre la maquina que está ejecutando el shell."},
+	{"ayuda", cmdAyuda, "[+] ayuda: Muestra una lista de todos los comandos disponibles. ayuda <cmd>: Muestra una breve descripcion sobre como usar el comando <cmd>."},
+	{"stat", cmdStat, "[+] stat: Devuelve el directorio actual. stat <path1> <path2>...: Da informacion sobre archivos o directorios. stat -long: Da mas informacion. stat -link: Tiene en cuenta los links simbolicos. stat -acc: Combinado con -long, muestra la fecha de ultimo acceso."},
+	{"list", cmdList, "[+] \n list: Devuelve el directorio actual.\n list <path1> <path2>...: Muestra una lista con informacion sobre todos los archivos y directorios de <path>.\n list -long: Da mas informacion.\n list -link: Tiene en cuenta los links simbolicos.\n list -acc: Combinado con -long, muestra la fecha de ultimo acceso. list -reca: recursivo (antes).\n list -recb: recursivo (despues)\n"},
+	{"create", cmdCreate, "[+] create: Crea un directorio vacio. create -f: Crea un fichero."},
+	{"delete", cmdBorrar, "[+] borrar <path1> <path2>...: Borra <path> si es un fichero o un directorio vacio"},
+	{"fin", cmdFin, "[+] Finaliza el shell."},
+	{"salir", cmdFin, "[+] Finaliza el shell."},
+	{"bye", cmdFin, "[+] Finaliza el shell."},
+	{"comando", cmdComando, "[+] comando N: Repite el comando numero N del historial de comandos."},
+	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
 	{NULL, NULL}
 };

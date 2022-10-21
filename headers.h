@@ -31,6 +31,7 @@ int numtrozos;
 typedef struct cm_entrada {
 	char *cm_nombre;
 	int (*cm_fun)();
+	char *ayuda;
 }cm_entrada ;
 
 cm_entrada cm_tabla[];
