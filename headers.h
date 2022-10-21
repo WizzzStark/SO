@@ -21,6 +21,8 @@
 
 #include "linked_list.h"
 
+#include <ctype.h>
+
 #define MAXTROZOS 512
 #define MAX_SIZE 1024
 

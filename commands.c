@@ -229,13 +229,11 @@ int cmdComando(tList *L) {
 	int i= 0;
 	char* comando = NULL;
 	comando = malloc(sizeof(char)*MAX_SIZE);
-	tPosL pos;
+	printf("NUMTROZOS %d", numtrozos);
 
-	if (numtrozos == 1 || n >= i || n<0) {
-		printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
-		free(comando);
-		return 0;
-	}else{
+
+	tPosL pos;
+	if (!isEmptyList(*L)) {
 		for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
 			i++;
 		}
