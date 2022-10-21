@@ -226,30 +226,46 @@ int cmdCarpeta() {
 
 int cmdComando(tList *L) {
 	int n = atoi(trozos[1]); 
-	int i= 0;
+	int i= 1;
 	char* comando = NULL;
 	comando = malloc(sizeof(char)*MAX_SIZE);
-	printf("NUMTROZOS %d", numtrozos);
-
 
 	tPosL pos;
+	int longitudTrozos1 = strlen(trozos[1]);
+
+	for (int x = 0; x < longitudTrozos1; x++) {
+		if (!isdigit(trozos[1][x])) {
+			printf(ROJO_T"Introduce un valor de índice válido de la lista (numerico) \n" RESET);
+    		free(comando);
+			return 0;
+		}
+	}
+
 	if (!isEmptyList(*L)) {
 		for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
 			i++;
 		}
-		//i--;
+		i--;
 
 		strncpy(comando, getItem(pos, *L), MAX_SIZE);
+
+		if (numtrozos == 1 || n > i) {
+			printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
+			free(comando);
+			return 0;
+		}
+
 		numtrozos = TrocearCadena(comando, trozos);
-
+    	free(comando);
+		procesarComando(L);
 	}
-
-
-	free(comando);
-	procesarComando(L);
-	return 0;
+	else {
+		printf(ROJO_T"La lista no tiene comandos\n"RESET);
+    	free(comando);
+	}
 	
-} 
+	return 0;
+}
 
 // -----------------------------------------------------------------------------
 // --------------------------------- P1 ----------------------------------------
