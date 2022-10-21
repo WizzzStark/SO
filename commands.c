@@ -277,7 +277,8 @@ int reca_func(tList *directorios, char* dir_actual){
 				reca_func(directorios, path);
 			}
 		}
-		closedir(d);
+		if (closedir(d) == -1) perror("closedir");
+		
 	}
 
 	return 0;
@@ -300,7 +301,7 @@ int recb_func(tList *directorios, char* dir_actual) {
 				recb_func(directorios, path);
 			}
 		}
-		closedir(d);
+		if (closedir(d) == -1) perror("closedir");
 
 		if(isEmptyList(*directorios)){
 			insertItem(dir_actual,first(*directorios),directorios);
@@ -331,7 +332,7 @@ int delRec(char * path) {
 			}
 		}
 		rmdir(path);
-		closedir(d);
+		if (closedir(d) == -1) perror("closedir");
 
 	}
 	else {
@@ -436,10 +437,14 @@ int cmdList(){
 					pos = first(directorios);
 					while (pos != LNULL) {
 						path = getItem(pos, directorios);
-						if (path[2] == '.' && !hid) {
-							pos = next(pos, directorios);
-							continue;
+						
+						if ((reca || recb) && (strlen(path) >= 3)) {
+							if (path[0] == '.' && path[1] == '/' && path[2] == '.' && !hid) {
+								pos = next(pos, directorios);
+								continue;
+							}
 						}
+						
 						if((d = opendir(path))){
 
 							printf("************%s\n", path);
@@ -471,7 +476,7 @@ int cmdList(){
 
 							}
 							pos = next(pos, directorios);
-							closedir(d);
+							if (closedir(d) == -1) perror("closedir");
 							primer_elemento = false;
 						}
 						else {
@@ -480,7 +485,7 @@ int cmdList(){
 					}
 				}
 				deleteList(&directorios);
-				closedir(d2);
+				if (closedir(d2) == -1) perror("closedir");
 			}else{
 				cmdStat();
 			}
