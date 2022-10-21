@@ -229,22 +229,32 @@ int cmdComando(tList *L) {
 	int i= 1;
 	char* comando = NULL;
 	comando = malloc(sizeof(char)*MAX_SIZE);
+	printf("NUMTROZOS %d", numtrozos);
+
 
 	tPosL pos;
-	for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
+	if (!isEmptyList(*L)) {
+		for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
 			i++;
+		}
+		i--;
+
+		strncpy(comando, getItem(pos, *L), MAX_SIZE);
+
+		if (numtrozos == 1 || n > i) {
+			printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
+			free(comando);
+			return 0;
+		}
+
+		numtrozos = TrocearCadena(comando, trozos);
+    	free(comando);
+		procesarComando(L);
 	}
-	i--;
-
-	strncpy(comando, getItem(pos, *L), MAX_SIZE);
-
-	if (numtrozos == 1 || n > i) {
-		printf(ROJO_T"Introduce un valor de índice válido de la lista\n" RESET);
+	else {
+		printf(ROJO_T"La lista no tiene comandos\n"RESET);
 	}
-
-
-	numtrozos = TrocearCadena(comando, trozos);
-	procesarComando(L);
+	
 	return 0;
 	
 } 
@@ -572,7 +582,7 @@ void procesarComando(tList *L){
 			
 		}
 }
-//stat dadasdas-> devuelve algo y deberia devolver perror
+
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
 	{"pid", cmdPid, "[+] pid : Imprime el pid del proceso que ejecuta el shell. pid -p: Imprime el pid del proceso padre del shell."},
