@@ -224,7 +224,7 @@ int cmdCarpeta() {
 	return 0;
 }
 
-int cmdComando(tList *L) {
+int cmdComando(tList *L, tAllocList *allocations) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
@@ -257,7 +257,7 @@ int cmdComando(tList *L) {
 
 		numtrozos = TrocearCadena(comando, trozos);
     	free(comando);
-		procesarComando(L);
+		procesarComando(L, allocations);
 	}
 	else {
 		printf(ROJO_T"La lista no tiene comandos\n"RESET);
@@ -563,8 +563,36 @@ int cmdBorrar(){
 }
 
 //------------------------------P2------------------------------------------
-int allocMalloc() {
-	printf("Malloc\n");
+int cmdMalloc(tList *L, tAllocList *allocations) {
+	time_t mallocTime;
+	tAllocData *allocData = malloc(sizeof(tAllocData));
+	char * allocationAddress;
+
+	if (numtrozos == 1) printf("IMPRIMIR LISTA");
+	else {
+		allocationAddress = malloc(atoi(trozos[1]));
+		if (allocationAddress == NULL) {perror("malloc"); return 0;}
+
+		if (time(&mallocTime) == -1) {perror("time"); return 0;}
+
+		allocData -> size = atoi(trozos[1]);
+		sprintf(allocData -> allocation, "%p", allocationAddress);
+		strcpy(allocData -> date, ctime(&mallocTime));
+		strcpy(allocData -> allocationType, "malloc");
+
+		printf("size: %d\n",allocData -> size);
+		printf("allocation: %s\n",allocData -> allocation);
+		printf("date: %s\n",allocData -> date);
+		printf("allocationType: %s\n",allocData -> allocationType);
+
+		insertElement(*allocData, allocations);
+
+		printf("allocated %d bytes at %p\n", atoi(trozos[1]), allocationAddress);
+
+		free(allocationAddress);
+	}
+	free(allocData);
+
 	return 0;
 
 }
@@ -574,7 +602,7 @@ int cmdAllocate() {
 	return 0;
 }
 
-void procesarComando(tList *L){
+void procesarComando(tList *L, tAllocList *allocations){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
@@ -596,7 +624,7 @@ void procesarComando(tList *L){
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
 					if (numtrozos >= 3) trozos[1] = trozos[2];
-					cm_tabla[i].cm_fun(L);
+					cm_tabla[i].cm_fun(L, allocations);
 					break;
 				}
 			}
@@ -608,7 +636,7 @@ void procesarComando(tList *L){
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L);
+					cm_tabla[i].cm_fun(L, allocations);
 					break;
 				}
 			}
@@ -633,6 +661,6 @@ cm_entrada cm_tabla[] = {
 	{"comando", cmdComando, "[+] comando N: Repite el comando numero N del historial de comandos."},
 	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
 	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
-	{"malloc", allocMalloc, "[+] malloquea cosas"},
+	{"malloc", cmdMalloc, "[+] malloquea cosas"},
 	{NULL, NULL}
 };

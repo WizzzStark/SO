@@ -9,9 +9,10 @@
 int main() {
 	tComando lineaCompleta;
 	tList L;
+	tAllocList allocations;
 
 	createEmptyList(&L);
-
+	createEmptyAllocList(&allocations);
 
 	while(1) {
 		printf(AMARILLO_T"># "RESET);
@@ -31,7 +32,7 @@ int main() {
 			}
 		}
 
-		procesarComando(&L);
+		procesarComando(&L, &allocations);
 		
 	}
 }

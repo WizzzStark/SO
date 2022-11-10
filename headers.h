@@ -20,6 +20,7 @@
 #include <fcntl.h>
 
 #include "linked_list.h"
+#include "allocationsList.h"
 
 #include <ctype.h>
 
@@ -38,7 +39,7 @@ typedef struct cm_entrada {
 
 cm_entrada cm_tabla[];
 
-void procesarComando(tList *L);
+void procesarComando(tList *L, tAllocList *allocations);
 char LetraTF (mode_t m);
 char * ConvierteModo2 (mode_t m);
 
