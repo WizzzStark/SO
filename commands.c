@@ -590,15 +590,16 @@ void procesarComando(tList *L){
 		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
-					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
+					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
+					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
+					if (numtrozos >= 3) trozos[1] = trozos[2];
 					cm_tabla[i].cm_fun(L);
 					break;
 				}
 			}
-			//free(allocateCmd);
 		}
 		else {
 			for (int i = 0; ;i++) {
