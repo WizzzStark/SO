@@ -562,32 +562,55 @@ int cmdBorrar(){
 	return 0;
 }
 
+//------------------------------P2------------------------------------------
+int allocMalloc() {
+	printf("Malloc\n");
+	return 0;
+
+}
+
+int cmdAllocate() {
+	printf("Allocate\n");
+	return 0;
+}
+
 void procesarComando(tList *L){
-	for (int i = 0; ; i++) {
-			if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
+		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
+			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
 					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
 					break;
 				}
-				
-				if (strcmp(cm_tabla[i].cm_nombre, trozos[1]) == 0) {
-
+				else if (strcmp(cm_tabla[i].cm_nombre, trozos[1]) == 0) {
 					printf(AZUL_T"%s\n"RESET, cm_tabla[i].ayuda);
 					break;
-				}	
+				}
 			}
-			else {
+		}
+		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
+			for (int i = 0; ;i++) {
+				if (cm_tabla[i].cm_nombre==NULL) {
+					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
+					break;
+				}
+				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
+					cm_tabla[i].cm_fun(L);
+					break;
+				}
+			}
+			//free(allocateCmd);
+		}
+		else {
+			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
 					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-
 					cm_tabla[i].cm_fun(L);
 					break;
 				}
 			}
-			
 		}
 }
 
@@ -599,7 +622,7 @@ cm_entrada cm_tabla[] = {
 	{"hist", cmdHist, "[+] hist: Imprime una lista de todos los comandos que se hayan usado. hist -c: Borra el historial de comandos. hist -N: Imprime los primero N comandos."},
 	{"infosis", cmdInfosis, "[+] Imprime informacion sobre la maquina que está ejecutando el shell."},
 	{"ayuda", cmdAyuda, "[+] ayuda: Muestra una lista de todos los comandos disponibles. ayuda <cmd>: Muestra una breve descripcion sobre como usar el comando <cmd>."},
-	{"stat", cmdStat, "[+] stat: Devuelve el directorio actual. stat <path1> <path2>...: Da informacion sobre archivos o directorios. stat -long: Da mas informacion. stat -link: Tiene en cuenta los links simbolicos. stat -acc: Combinado con -long, muestra la fecha de ultimo acceso."},
+	{"stat", cmdStat, "[+] stat: Devuelve el directorio actual.\n stat <path1> <path2>...: Da informacion sobre archivos o directorios.\n stat -long: Da mas informacion. stat -link: Tiene en cuenta los links simbolicos.\n stat -acc: Combinado con -long, muestra la fecha de ultimo acceso."},
 	{"list", cmdList, "[+] \n list: Devuelve el directorio actual.\n list <path1> <path2>...: Muestra una lista con informacion sobre todos los archivos y directorios de <path>.\n list -long: Da mas informacion.\n list -link: Tiene en cuenta los links simbolicos.\n list -acc: Combinado con -long, muestra la fecha de ultimo acceso. list -reca: recursivo (antes).\n list -recb: recursivo (despues)\n"},
 	{"create", cmdCreate, "[+] create: Crea un directorio vacio. create -f: Crea un fichero."},
 	{"delete", cmdBorrar, "[+] borrar <path1> <path2>...: Borra <path> si es un fichero o un directorio vacio"},
@@ -608,5 +631,7 @@ cm_entrada cm_tabla[] = {
 	{"bye", cmdFin, "[+] Finaliza el shell."},
 	{"comando", cmdComando, "[+] comando N: Repite el comando numero N del historial de comandos."},
 	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
+	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
+	{"malloc", allocMalloc, "[+] malloquea cosas"},
 	{NULL, NULL}
 };
