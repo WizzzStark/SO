@@ -563,12 +563,43 @@ int cmdBorrar(){
 }
 
 //------------------------------P2------------------------------------------
+void imprimirAllocations(tAllocList allocations, char * print) {
+	tAllocPos pos;
+	tAllocData *allocData = malloc(sizeof(tAllocData));
+
+	if (!isEmptyAllocList(allocations)) {
+		pos = firstElement(allocations);
+		if (strcmp(print, "ANY") == 0) {
+			printf(AZUL_T"[+] Lista de bloques asignados para el proceso %d\n"RESET, getpid());
+			while (pos != NULL_ALLOC) {
+				*allocData = getElement(pos, allocations);
+				printf("%s\t\t\t%d %s %s", allocData -> allocation, allocData -> size, allocData -> date, allocData -> allocationType);
+				pos = nextElement(pos, allocations);
+			}
+		}
+		else {
+			printf(AZUL_T"[+] Lista de bloques %s asignados para el proceso %d\n"RESET, print, getpid());
+			while (pos != NULL_ALLOC) {
+				*allocData = getElement(pos, allocations);
+				if (strcmp(allocData -> allocationType, print) == 0) {
+					printf("%4s %d %s %s", allocData -> allocation, allocData -> size, allocData -> date, allocData -> allocationType);
+					pos = nextElement(pos, allocations);
+				}
+			}
+		}
+	}
+	else printf(AZUL_T"[+] El proceso %d no tiene bloques asignados\n"RESET, getpid());
+
+	free(allocData);
+
+}
+
 int cmdMalloc(tList *L, tAllocList *allocations) {
 	time_t mallocTime;
 	tAllocData *allocData = malloc(sizeof(tAllocData));
 	char * allocationAddress;
 
-	if (numtrozos == 1) printf("IMPRIMIR LISTA");
+	if (numtrozos == 1) imprimirAllocations(*allocations, "malloc");
 	else {
 		allocationAddress = malloc(atoi(trozos[1]));
 		if (allocationAddress == NULL) {perror("malloc"); return 0;}
@@ -579,11 +610,6 @@ int cmdMalloc(tList *L, tAllocList *allocations) {
 		sprintf(allocData -> allocation, "%p", allocationAddress);
 		strcpy(allocData -> date, ctime(&mallocTime));
 		strcpy(allocData -> allocationType, "malloc");
-
-		printf("size: %d\n",allocData -> size);
-		printf("allocation: %s\n",allocData -> allocation);
-		printf("date: %s\n",allocData -> date);
-		printf("allocationType: %s\n",allocData -> allocationType);
 
 		insertElement(*allocData, allocations);
 
@@ -622,8 +648,8 @@ void procesarComando(tList *L, tAllocList *allocations){
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
-					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
-					if (numtrozos >= 3) trozos[1] = trozos[2];
+					if (numtrozos >= 2) {trozos[0] = &trozos[1][1]; numtrozos = 1;}
+					if (numtrozos >= 3) {trozos[1] = trozos[2]; numtrozos = 2;}
 					cm_tabla[i].cm_fun(L, allocations);
 					break;
 				}
