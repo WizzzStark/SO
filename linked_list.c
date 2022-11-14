@@ -41,13 +41,13 @@ void freeList(tList *T){
 
 
 
-bool insertItem(tComando d, tPosL p, tList *L) { 
+bool insertItem(void* d, tPosL p, tList *L) { 
     tPosL q, r;
 
     if (!createNode(&q))//La direcion *p la pasamos por referecia (&) como variable q,
         return false;
     else {
-        strcpy(q->data, d); //Q es una posicion (punntero  a un nodo) por lo tanto para cambiar algo en ese nodo usamos la flecha
+        q->data = d; //Q es una posicion (punntero  a un nodo) por lo tanto para cambiar algo en ese nodo usamos la flecha
         q -> next = LNULL;
         if (*L == LNULL) 
             *L = q; 
@@ -61,9 +61,9 @@ bool insertItem(tComando d, tPosL p, tList *L) {
         }
         else { //Si queremos insertar en una posicion intermedia, en vez de almacenar el nuevo dato (data) en la nueva posicion (q), ponemos dicho dato en la posicion que ya estaba (p)
     
-            strcpy(q -> data, p -> data); 
-            strcpy(p -> data, d);
-            q -> next = p -> next; 
+            q -> data =  p -> data; 
+            p -> data = d;
+            q -> next = p -> next;
             p -> next = q; 
         }
         return true;
@@ -72,7 +72,7 @@ bool insertItem(tComando d, tPosL p, tList *L) {
 }//insertItem
 
 
-tPosL findItem(tComando d, tList L) {
+tPosL findItem(void* d, tList L) {
     tPosL p;
 
     for(p = L; (p != LNULL) && (strcmp(p -> data, d) != 0); p = p->next);//Mientras no se llegue al final y la data de la posicion p sea distinta de la buscada, sigue buscando
@@ -83,10 +83,10 @@ bool isEmptyList(tList L) {
     return L == LNULL;
 }
 
-char* getItem(tPosL p, tList L) {
-    char* comando;
-    comando = p -> data;
-    return comando;
+void*  getItem(tPosL p, tList L) {
+    void* elemento;
+    elemento = p -> data;
+    return elemento;
 }
 
 tPosL first(tList L) {

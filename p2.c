@@ -7,12 +7,14 @@
 
 
 int main() {
-	tComando lineaCompleta;
+
+	char lineaCompleta[1024];
+	char linea[1024];
 	tList L;
-	tAllocList allocations;
+	tList allocations;
 
 	createEmptyList(&L);
-	createEmptyAllocList(&allocations);
+	createEmptyList(&allocations);
 
 	while(1) {
 		printf(AMARILLO_T"># "RESET);

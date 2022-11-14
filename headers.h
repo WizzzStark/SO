@@ -20,14 +20,12 @@
 #include <fcntl.h>
 
 #include "linked_list.h"
-#include "allocationsList.h"
 
 #include <ctype.h>
 
 #define MAXTROZOS 512
 #define MAX_SIZE 1024
 
-tComando linea;
 char *trozos[MAXTROZOS];
 int numtrozos;
 
@@ -39,7 +37,7 @@ typedef struct cm_entrada {
 
 cm_entrada cm_tabla[];
 
-void procesarComando(tList *L, tAllocList *allocations);
+void procesarComando(tList *L, tList *mallocs);
 char LetraTF (mode_t m);
 char * ConvierteModo2 (mode_t m);
 

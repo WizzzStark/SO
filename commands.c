@@ -224,7 +224,7 @@ int cmdCarpeta() {
 	return 0;
 }
 
-int cmdComando(tList *L, tAllocList *allocations) {
+int cmdComando(tList *L, tList *mallocs) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
@@ -257,7 +257,7 @@ int cmdComando(tList *L, tAllocList *allocations) {
 
 		numtrozos = TrocearCadena(comando, trozos);
     	free(comando);
-		procesarComando(L, allocations);
+		procesarComando(L, mallocs);
 	}
 	else {
 		printf(ROJO_T"La lista no tiene comandos\n"RESET);
@@ -512,8 +512,6 @@ int cmdList(){
 	return 0;
 }
 
-
-
 int cmdDelTree() {
 	for (int i = 1; i < numtrozos; i++) 
 		delRec(trozos[i]);
@@ -564,12 +562,29 @@ int cmdBorrar(){
 
 //------------------------------P2------------------------------------------
 
-int cmdMalloc(tList *L, tAllocList *allocations) {
+void imprimirAllocations(tList list, char* allocation_type) {
+	tPosL pos;
+	tAllocData *data;
+
+	if (strcmp(allocation_type, "malloc") == 0){
+		printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
+		if (!isEmptyList(list)) {
+			pos = first(list);
+			while (pos != LNULL) {
+				data = getItem(pos, list);
+					printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+                    pos = next(pos, list);
+				}
+			}
+		}
+}
+
+int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
 	tAllocData *allocData = malloc(sizeof(tAllocData));
 	char * allocationAddress;
 
-	if (numtrozos == 1) printf("IMPRIMIR LISTA\n");
+	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc");
 	else {
 		allocationAddress = malloc(atoi(trozos[1]));
 		if (allocationAddress == NULL) {perror("malloc"); return 0;}
@@ -579,15 +594,18 @@ int cmdMalloc(tList *L, tAllocList *allocations) {
 		allocData -> size = atoi(trozos[1]);
 		sprintf(allocData -> allocation, "%p", allocationAddress);
 		strcpy(allocData -> date, ctime(&mallocTime));
-		strcpy(allocData -> allocationType, "malloc");
 
 		printf("----------------------------------\n");
 		printf("Tamaño: %d\n",allocData -> size);
 		printf("Dirección: %s\n",allocData -> allocation);
 		printf("Fecha: %s\n",allocData -> date);
-		printf("AllocationType: %s\n",allocData -> allocationType);
+		printf("AllocationType: malloc\n");
 
-		insertElement(*allocData, allocations);
+		if(isEmptyList(*mallocs)){
+				insertItem(allocData,first(*mallocs),mallocs);
+		}else{
+			insertItem(allocData,next(last(*mallocs), *mallocs),mallocs);
+		}
 
 		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
 		printf("----------------------------------\n");
@@ -605,7 +623,7 @@ int cmdAllocate() {
 	return 0;
 }
 
-void procesarComando(tList *L, tAllocList *allocations){
+void procesarComando(tList *L, tList *mallocs){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
@@ -627,7 +645,7 @@ void procesarComando(tList *L, tAllocList *allocations){
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
 					if (numtrozos >= 3) trozos[1] = trozos[2];
-					cm_tabla[i].cm_fun(L, allocations);
+					cm_tabla[i].cm_fun(L, mallocs);
 					break;
 				}
 			}
@@ -639,7 +657,7 @@ void procesarComando(tList *L, tAllocList *allocations){
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L, allocations);
+					cm_tabla[i].cm_fun(L, mallocs);
 					break;
 				}
 			}
