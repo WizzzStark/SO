@@ -1,10 +1,10 @@
-EXE_NAME=p1
+EXE_NAME=p2
 VAL_REPORT=valgrind_report.txt
 
 all: clean $(EXE_NAME)
 
-p1:
-	gcc -Wall -o p1 $(EXE_NAME).c linked_list.o allocationsList.o
+p2:
+	gcc -Wall -o p2 $(EXE_NAME).c linked_list.o allocationsList.o
 
 clean:
 	rm -f $(EXE_NAME)

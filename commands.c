@@ -563,12 +563,13 @@ int cmdBorrar(){
 }
 
 //------------------------------P2------------------------------------------
+
 int cmdMalloc(tList *L, tAllocList *allocations) {
 	time_t mallocTime;
 	tAllocData *allocData = malloc(sizeof(tAllocData));
 	char * allocationAddress;
 
-	if (numtrozos == 1) printf("IMPRIMIR LISTA");
+	if (numtrozos == 1) printf("IMPRIMIR LISTA\n");
 	else {
 		allocationAddress = malloc(atoi(trozos[1]));
 		if (allocationAddress == NULL) {perror("malloc"); return 0;}
@@ -580,14 +581,16 @@ int cmdMalloc(tList *L, tAllocList *allocations) {
 		strcpy(allocData -> date, ctime(&mallocTime));
 		strcpy(allocData -> allocationType, "malloc");
 
-		printf("size: %d\n",allocData -> size);
-		printf("allocation: %s\n",allocData -> allocation);
-		printf("date: %s\n",allocData -> date);
-		printf("allocationType: %s\n",allocData -> allocationType);
+		printf("----------------------------------\n");
+		printf("Tamaño: %d\n",allocData -> size);
+		printf("Dirección: %s\n",allocData -> allocation);
+		printf("Fecha: %s\n",allocData -> date);
+		printf("AllocationType: %s\n",allocData -> allocationType);
 
 		insertElement(*allocData, allocations);
 
-		printf("allocated %d bytes at %p\n", atoi(trozos[1]), allocationAddress);
+		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
+		printf("----------------------------------\n");
 
 		free(allocationAddress);
 	}
