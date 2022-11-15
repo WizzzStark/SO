@@ -60,6 +60,13 @@ bool insertAllocData(tAllocData d, tList *L) {
     insertItem(allocData2, L);
 }
 
+bool insertString(char * string, tList *L) {
+    char* lineaReservada = malloc(sizeof(char)*1024);
+	strcpy(lineaReservada, string);
+	insertItem(lineaReservada, L);
+
+}
+
 bool isEmptyList(tList L) {
     return L == LNULL;
 }

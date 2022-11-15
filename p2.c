@@ -29,9 +29,7 @@ int main() {
 		if (numtrozos == 0 || (numtrozos == 1 && strcmp("comando", trozos[0]) == 0)) continue;
 
 		if(strcmp("comando", trozos[0]) != 0){
-			char* lineaReservada = malloc(sizeof(char)*1024);
-			strcpy(lineaReservada, lineaCompleta);
-			insertItem(lineaReservada, &L);
+			insertString(lineaCompleta, &L);
 		}
 
 		procesarComando(&L, &allocations);

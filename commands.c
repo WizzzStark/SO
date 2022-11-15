@@ -278,9 +278,7 @@ int reca_func(tList *directorios, char* dir_actual){
 	DIR *d = opendir(dir_actual);
 
 	if (d){
-		char* lineaReservada = malloc(sizeof(char)*1024);
-		strcpy(lineaReservada, dir_actual);
-		insertItem(lineaReservada, directorios);
+        insertString(dir_actual, directorios);
 
 		while((dir = readdir(d)) != NULL){
 
@@ -318,10 +316,8 @@ int recb_func(tList *directorios, char* dir_actual) {
 			}
 		}
 		if (closedir(d) == -1) perror("closedir");
-
-		char* lineaReservada = malloc(sizeof(char)*1024);
-		strcpy(lineaReservada, dir_actual);
-		insertItem(lineaReservada, directorios);
+        
+        insertString(dir_actual, directorios);
 	}
 
 	return 0;
@@ -439,9 +435,7 @@ int cmdList(){
 					recb_func(&directorios, trozos[i]);
 				}else{
 					createEmptyList(&directorios);
-					char* lineaReservada = malloc(sizeof(char)*1024);
-					strcpy(lineaReservada, trozos[i]);
-					insertItem(lineaReservada, &directorios);
+                    insertString(trozos[i], &directorios);
 				}
 
 				if (!isEmptyList(directorios)) {

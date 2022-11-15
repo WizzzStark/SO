@@ -46,5 +46,6 @@ tPosL last(tList L);
 tPosL next(tPosL p, tList L);
 
 bool insertAllocData(tAllocData d, tList *L);
+bool insertString(char * string, tList *L);
 
 #endif
