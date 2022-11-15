@@ -558,7 +558,9 @@ int cmdBorrar(){
 
 int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
-	tAllocData *allocData = malloc(sizeof(tAllocData));
+	//tAllocData *allocData = malloc(sizeof(tAllocData));
+    tAllocData allocData;
+    //tAllocData *allocData = NULL;
 	char * allocationAddress;
 
 	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc", true);
@@ -568,25 +570,31 @@ int cmdMalloc(tList *L, tList *mallocs) {
 
 		if (time(&mallocTime) == -1) {perror("time"); return 0;}
 
-		allocData -> size = atoi(trozos[1]);
-		sprintf(allocData -> allocation, "%p", allocationAddress);
-		strcpy(allocData -> date, ctime(&mallocTime));
+		allocData.size = atoi(trozos[1]);
+		sprintf(allocData.allocation, "%p", allocationAddress);
+		strcpy(allocData.date, ctime(&mallocTime));
 
 		printf("----------------------------------\n");
-		printf("Tamaño: %d\n",allocData -> size);
-		printf("Dirección: %s\n",allocData -> allocation);
-		quitarSalto(allocData -> date);
-		printf("Fecha: %s\n",allocData -> date);
+		printf("Tamaño: %d\n",allocData.size);
+		printf("Dirección: %s\n",allocData.allocation);
+		quitarSalto(allocData.date);
+		printf("Fecha: %s\n",allocData.date);
 		printf("AllocationType: malloc\n");
 
-		insertItem(allocData, mallocs);
+       	/*tAllocData *allocData2 = malloc(sizeof(tAllocData));
+        allocData2 -> size = allocData.size;
+        sprintf(allocData2 -> allocation, "%d", *allocData.allocation);
+		strcpy(allocData2 -> allocation, allocData.allocation);
+		strcpy(allocData2 -> date, allocData.date);
+        
+		insertItem(allocData2, mallocs);*/
+        insertAllocData(allocData, mallocs);
 
 		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
 		printf("----------------------------------\n");
 
 		free(allocationAddress);
 	}
-	free(allocData);
 
 	return 0;
 
