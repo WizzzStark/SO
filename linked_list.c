@@ -30,7 +30,6 @@ void removeItem(tPosL p, tList *L) {
     tPosL q;
 
     if (p == *L) {
-        printf("AQUI1\n");
       *L = (*L) -> next;
     } //Borrar en primera posición
     else if (p -> next == LNULL) { //Borrar en ultima posicion
@@ -89,7 +88,7 @@ bool insertAllocData(tAllocData d, tList *L) {
 }
 
 bool insertString(char * string, tList *L) {
-    char* lineaReservada = malloc(sizeof(string));
+    char* lineaReservada = malloc(sizeof(char)*1024);
 	strcpy(lineaReservada, string);
 	insertItem(lineaReservada, L);
 

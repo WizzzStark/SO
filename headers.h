@@ -23,6 +23,9 @@
 
 #include <ctype.h>
 
+#include <sys/mman.h>
+
+
 #define MAXTROZOS 512
 #define MAX_SIZE 1024
 
@@ -38,7 +41,7 @@ typedef struct cm_entrada {
 
 cm_entrada cm_tabla[];
 
-void procesarComando(tList *L, tList *mallocs);
+void procesarComando(tList *L, tList *mallocs, tList *mmaps);
 char LetraTF (mode_t m);
 char * ConvierteModo2 (mode_t m);
 

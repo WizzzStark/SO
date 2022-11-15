@@ -85,6 +85,8 @@ void imprimirLista (tList list) {
 	}
 }
 
+
+
 int TrocearCadena(char * cadena, char * trozos[]) { 
 	
 	int i=1;
@@ -226,7 +228,7 @@ int cmdCarpeta() {
 	return 0;
 }
 
-int cmdComando(tList *L, tList *mallocs) {
+int cmdComando(tList *L, tList *mallocs, tList *mmaps) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
@@ -259,7 +261,7 @@ int cmdComando(tList *L, tList *mallocs) {
 
 		numtrozos = TrocearCadena(comando, trozos);
     	free(comando);
-		procesarComando(L, mallocs);
+		procesarComando(L, mallocs, mmaps);
 	}
 	else {
 		printf(ROJO_T"La lista no tiene comandos\n"RESET);
@@ -550,11 +552,50 @@ int cmdBorrar(){
 //------------------------------P2----------------------------------------------
 // -----------------------------------------------------------------------------
 
+ssize_t LeerFichero (char *f, void *p, size_t cont)
+{
+   struct stat s;
+   ssize_t  n;  
+   int df,aux;
+
+   if (stat (f,&s)==-1 || (df=open(f,O_RDONLY))==-1)
+	return -1;     
+   if (cont==-1)   /* si pasamos -1 como bytes a leer lo leemos entero*/
+	cont=s.st_size;
+   if ((n=read(df,p,cont))==-1){
+    perror("READ");
+	aux=errno;
+	close(df);
+	errno=aux;
+	return -1;
+   }
+   close (df);
+   return n;
+}
+
+void * MapearFichero (char * fichero, int protection, int *df)
+{
+    int map=MAP_PRIVATE,modo=O_RDONLY;
+    struct stat s;
+    void *p;
+
+    if (protection&PROT_WRITE)
+          modo=O_RDWR;
+    if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1) {
+        perror("stat");
+        return NULL;
+    }
+    if ((p=mmap (NULL,s.st_size, protection,map,*df,0))==MAP_FAILED) 
+           return NULL;
+/* Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero); */
+    return p;
+}
+
+
+
 int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
-	//tAllocData *allocData = malloc(sizeof(tAllocData));
     tAllocData allocData;
-    //tAllocData *allocData = NULL;
 	char * allocationAddress;
 
 	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc", true);
@@ -575,13 +616,6 @@ int cmdMalloc(tList *L, tList *mallocs) {
 		printf("Fecha: %s\n",allocData.date);
 		printf("AllocationType: malloc\n");
 
-       	/*tAllocData *allocData2 = malloc(sizeof(tAllocData));
-        allocData2 -> size = allocData.size;
-        sprintf(allocData2 -> allocation, "%d", *allocData.allocation);
-		strcpy(allocData2 -> allocation, allocData.allocation);
-		strcpy(allocData2 -> date, allocData.date);
-        
-		insertItem(allocData2, mallocs);*/
         insertAllocData(allocData, mallocs);
 
 		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
@@ -602,7 +636,9 @@ void imprimirTodos(tList L, tList mallocs){
 
 void imprimirAllocations(tList list, char* allocation_type, bool tag) {
 	tPosL pos;
-	tAllocData *data;   
+	void *data;
+    tAllocData *allocData;
+    tMmapData *mmapData;
 
 	if(tag) printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
 	if (!isEmptyList(list)) {
@@ -611,9 +647,13 @@ void imprimirAllocations(tList list, char* allocation_type, bool tag) {
 			data = getItem(pos, list);
 
 			if (strcmp(allocation_type, "malloc") == 0){
-				printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+                allocData = data;
+				printf("\t%s\t\t%d %s %s\n",allocData->allocation, allocData->size, allocData->date, allocation_type);
 			} else if (strcmp(allocation_type, "shared") == 0){
-				printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+				//printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+			} else if (strcmp(allocation_type, "mmap") == 0){
+                mmapData = data;
+				printf("\t%s\t\t%d %s %s (%d)\n",mmapData->allocation, mmapData->size, mmapData->date, mmapData->file_name, mmapData->file_descriptor);
 			}
 
 			pos = next(pos, list);
@@ -622,12 +662,107 @@ void imprimirAllocations(tList list, char* allocation_type, bool tag) {
 	
 }
 
+
 int cmdAllocate(tList *L, tList *mallocs) {
 	imprimirTodos(*L, *mallocs);
 	return 0;
 }
 
-void procesarComando(tList *L, tList *mallocs){
+int freeMmap(char * fichero, tList *list) {
+    tPosL pos;
+    tMmapData *mmapData;
+    void *p;
+
+    if (!isEmptyList(*list)) {
+        pos = first(*list);
+        while (pos != LNULL) {
+            mmapData = getItem(pos, *list);
+            if (strcmp(fichero, mmapData -> file_name) == 0) break;
+            pos = next(pos, *list);
+        }
+        if (pos != LNULL) {
+            p = (void *) strtoul(mmapData -> allocation, NULL, 16);
+
+            if (munmap(p, mmapData -> size) == -1) {perror("munmap"); return 0;}
+            close(mmapData -> file_descriptor);
+
+            removeItem(pos, list);
+
+            printf("Fichero %s unmapeado en %p\n", trozos[2], p);
+        }
+        else printf("El archivo no existe o no fue mapeado\n");
+    } else printf("El archivo no existe o no fue mapeado\n");
+    
+    return 0;
+}
+
+void do_AllocateMmap(char *arg[], tList *maps)
+{ 
+     char *perm;
+     void *p;
+     int protection=0;
+     int df;     
+     if (arg[0]==NULL)
+            //{ImprimirListaMmap(&maps); return;}
+     if ((perm=arg[1])!=NULL && strlen(perm)<4) {
+            if (strchr(perm,'r')!=NULL) protection|=PROT_READ;
+            if (strchr(perm,'w')!=NULL) protection|=PROT_WRITE;
+            if (strchr(perm,'x')!=NULL) protection|=PROT_EXEC;
+     }
+     if ((p=MapearFichero(arg[0],protection, &df))==NULL)
+             perror ("Imposible mapear ficheeeeeeeeeeero");
+     else
+             printf ("fichero %s mapeado en %p\n", arg[0], p);
+}
+
+int cmdMmap(tList *L, tList *mallocs ,tList *maps) {
+    int protection = 0;
+    void *p;
+    struct stat s;
+	time_t mmapTime;
+    tMmapData mmapData;
+    int df = 0;
+
+    if (numtrozos == 1 || (numtrozos == 2 && strcmp(trozos[1], "-free") == 0)) imprimirAllocations(*maps, "mmap", true);
+    else if (numtrozos == 3 && strcmp(trozos[1], "-free") == 0) freeMmap(trozos[2], maps);
+    else {
+        if (numtrozos == 3) {
+            if (strchr(trozos[2],'r')!=NULL) protection|=PROT_READ;
+            if (strchr(trozos[2],'w')!=NULL) protection|=PROT_WRITE;
+            if (strchr(trozos[2],'x')!=NULL) protection|=PROT_EXEC;
+        }
+
+        if ((p=MapearFichero(trozos[1],protection, &df))==NULL)
+            perror ("Imposible mapear fichero");
+
+        if (time(&mmapTime) == -1) {perror("time"); return 0;}
+        if (stat(trozos[1], &s) == -1) {perror("Stat"); return 0;}
+
+	    sprintf(mmapData.allocation, "%p", p);
+	    mmapData.size = s.st_size;
+        strcpy(mmapData.date, ctime(&mmapTime));
+        mmapData.file_descriptor = df;
+        strcpy(mmapData.file_name, trozos[1]);
+
+        printf("----------------------------------\n");
+        quitarSalto(mmapData.date);
+
+	    printf("Tamaño: %d\n",mmapData.size);
+	    printf("Dirección: %s\n",mmapData.allocation);
+	    printf("Fecha: %s\n",mmapData.date);
+	    printf("Descriptor: %d\n", mmapData.file_descriptor);
+	    printf("Nombre del archivo: %s\n", mmapData.file_name);
+	    printf("AllocationType: mmap\n");
+
+        insertMmapData(mmapData, maps);
+            
+        printf ("fichero %s mapeado en %p\n", trozos[1], p);
+	    printf("----------------------------------\n");
+    }
+    return 0;
+}
+
+void procesarComando(tList *L, tList *mallocs, tList *mmaps){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
@@ -649,7 +784,8 @@ void procesarComando(tList *L, tList *mallocs){
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
 					if (numtrozos >= 3) trozos[1] = trozos[2];
-					cm_tabla[i].cm_fun(L, mallocs);
+                    numtrozos = numtrozos - 1;
+					cm_tabla[i].cm_fun(L, mallocs, mmaps);
 					break;
 				}
 			}
@@ -661,7 +797,7 @@ void procesarComando(tList *L, tList *mallocs){
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L, mallocs);
+					cm_tabla[i].cm_fun(L, mallocs, mmaps);
 					break;
 				}
 			}
@@ -687,5 +823,6 @@ cm_entrada cm_tabla[] = {
 	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
 	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
 	{"malloc", cmdMalloc, "[+] malloquea cosas"},
+    {"mmap", cmdMmap, "[+] mapea cosas"},
 	{NULL, NULL}
 };
