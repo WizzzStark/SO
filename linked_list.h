@@ -45,4 +45,6 @@ tPosL first(tList L);
 tPosL last(tList L);
 tPosL next(tPosL p, tList L);
 
+bool insertAllocData(tAllocData d, tList *L);
+
 #endif

@@ -50,6 +50,16 @@ bool insertItem(void* d, tList *L) {
     }
 }
 
+bool insertAllocData(tAllocData d, tList *L) {
+    tAllocData *allocData2 = malloc(sizeof(tAllocData));
+    allocData2 -> size = d.size;
+    //sprintf(allocData2 -> allocation, "%d", *d.allocation);
+	strcpy(allocData2 -> allocation, d.allocation);
+	strcpy(allocData2 -> date, d.date);
+
+    insertItem(allocData2, L);
+}
+
 bool isEmptyList(tList L) {
     return L == LNULL;
 }
@@ -74,4 +84,3 @@ tPosL next(tPosL p, tList L) {
     return p->next;
 
 }
-
