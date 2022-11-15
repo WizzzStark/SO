@@ -617,6 +617,7 @@ void imprimirAllocations(tList list, char* allocation_type, bool tag) {
 			}
 
 			pos = next(pos, list);
+            printf("ASDAS");
 		}
 	}
 	
