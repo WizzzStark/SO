@@ -95,11 +95,13 @@ int TrocearCadena(char * cadena, char * trozos[]) {
 	return i;
 }
 
-int cmdFin(tList *L) {
-	deleteList(L);
+int cmdFin(tList *L, tList *mallocs) {
+	freeList(L, free);
+	freeList(mallocs, free);
+	//freeList(shared, freeShared);
 	printf(ROJO_T "\n[!] Saliendo de la shell ...\n\n" RESET);
-	exit(0);
-	return 0;
+	condicion = false;
+	return 1;
 }
 
 int cmdAutores() {
@@ -195,7 +197,7 @@ int cmdHist(tList *L) {
 	if (numtrozos == 1)
 		imprimirLista(*L);
 	else if (numtrozos == 2 && strcmp(trozos[1], "-c") == 0) {
-		freeList(L);
+		freeList(L, free);
 	} 
 	else if (numtrozos == 2) {
 		num[0] = strtok(trozos[1],"-");
@@ -276,13 +278,9 @@ int reca_func(tList *directorios, char* dir_actual){
 	DIR *d = opendir(dir_actual);
 
 	if (d){
-
-		if(isEmptyList(*directorios)){
-			insertItem(dir_actual,first(*directorios),directorios);
-
-		}else{
-			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
-		}
+		char* lineaReservada = malloc(sizeof(char)*1024);
+		strcpy(lineaReservada, dir_actual);
+		insertItem(lineaReservada, directorios);
 
 		while((dir = readdir(d)) != NULL){
 
@@ -321,12 +319,9 @@ int recb_func(tList *directorios, char* dir_actual) {
 		}
 		if (closedir(d) == -1) perror("closedir");
 
-		if(isEmptyList(*directorios)){
-			insertItem(dir_actual,first(*directorios),directorios);
-
-		}else{
-			insertItem(dir_actual,next(last(*directorios), *directorios),directorios);
-		}
+		char* lineaReservada = malloc(sizeof(char)*1024);
+		strcpy(lineaReservada, dir_actual);
+		insertItem(lineaReservada, directorios);
 	}
 
 	return 0;
@@ -444,11 +439,9 @@ int cmdList(){
 					recb_func(&directorios, trozos[i]);
 				}else{
 					createEmptyList(&directorios);
-					if(isEmptyList(directorios)){
-						insertItem(trozos[i],first(directorios),&directorios);
-					}else{
-						insertItem(trozos[i],next(last(directorios), directorios),&directorios);
-					}
+					char* lineaReservada = malloc(sizeof(char)*1024);
+					strcpy(lineaReservada, trozos[i]);
+					insertItem(lineaReservada, &directorios);
 				}
 
 				if (!isEmptyList(directorios)) {
@@ -491,7 +484,6 @@ int cmdList(){
 										printf("%6ld %s\n", info.st_size, dir->d_name);
 									}
 								}
-
 							}
 							pos = next(pos, directorios);
 							if (closedir(d) == -1) perror("closedir");
@@ -502,7 +494,7 @@ int cmdList(){
 						}
 					}
 				}
-				deleteList(&directorios);
+				freeList(&directorios, free);
 				if (closedir(d2) == -1) perror("closedir");
 			}else{
 				cmdStat();
@@ -560,31 +552,16 @@ int cmdBorrar(){
 	return 0;
 }
 
-//------------------------------P2------------------------------------------
-
-void imprimirAllocations(tList list, char* allocation_type) {
-	tPosL pos;
-	tAllocData *data;
-
-	if (strcmp(allocation_type, "malloc") == 0){
-		printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
-		if (!isEmptyList(list)) {
-			pos = first(list);
-			while (pos != LNULL) {
-				data = getItem(pos, list);
-					printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
-                    pos = next(pos, list);
-				}
-			}
-		}
-}
+// -----------------------------------------------------------------------------
+//------------------------------P2----------------------------------------------
+// -----------------------------------------------------------------------------
 
 int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
 	tAllocData *allocData = malloc(sizeof(tAllocData));
 	char * allocationAddress;
 
-	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc");
+	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc", true);
 	else {
 		allocationAddress = malloc(atoi(trozos[1]));
 		if (allocationAddress == NULL) {perror("malloc"); return 0;}
@@ -598,14 +575,11 @@ int cmdMalloc(tList *L, tList *mallocs) {
 		printf("----------------------------------\n");
 		printf("Tamaño: %d\n",allocData -> size);
 		printf("Dirección: %s\n",allocData -> allocation);
+		quitarSalto(allocData -> date);
 		printf("Fecha: %s\n",allocData -> date);
 		printf("AllocationType: malloc\n");
 
-		if(isEmptyList(*mallocs)){
-				insertItem(allocData,first(*mallocs),mallocs);
-		}else{
-			insertItem(allocData,next(last(*mallocs), *mallocs),mallocs);
-		}
+		insertItem(allocData, mallocs);
 
 		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
 		printf("----------------------------------\n");
@@ -617,9 +591,37 @@ int cmdMalloc(tList *L, tList *mallocs) {
 	return 0;
 
 }
+void imprimirTodos(tList L, tList mallocs){
+	printf("******Lista de bloques asignados para el proceso %d\n", getpid());
+	imprimirAllocations(mallocs, "malloc", false);
+	//imprimirAllocations(shared, "shared");
+	//imprimirAllocations(mmap, "mmap");
+}
 
-int cmdAllocate() {
-	printf("Allocate\n");
+void imprimirAllocations(tList list, char* allocation_type, bool tag) {
+	tPosL pos;
+	tAllocData *data;   
+
+	if(tag) printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
+	if (!isEmptyList(list)) {
+		pos = first(list);
+		while (pos != LNULL) {
+			data = getItem(pos, list);
+
+			if (strcmp(allocation_type, "malloc") == 0){
+				printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+			} else if (strcmp(allocation_type, "shared") == 0){
+				printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
+			}
+
+			pos = next(pos, list);
+		}
+	}
+	
+}
+
+int cmdAllocate(tList *L, tList *mallocs) {
+	imprimirTodos(*L, *mallocs);
 	return 0;
 }
 

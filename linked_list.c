@@ -18,31 +18,22 @@ void createEmptyList(tList *L) {
     *L = LNULL; //Como le estamos pasando L como variable, y queremos modificar aquello a lo que apunta L, se pone el asterisco
 }
 
-void deleteList(tList *T){
-    tPosL p;
 
-    while(*T != LNULL){
-        p = *T;
-        *T = (*T)-> next;
-        free(p);
+void freeList(tList *L, void (*free_aux)(void *)){
+    tPosL p, a;
+    p = *L;
+    while(p != LNULL){
+        a = p;
+        free_aux(p->data);
+        p = p->next;
+        free(a);
     }
 }
 
-void freeList(tList *T){
-    tPosL p;
-
-    while(*T != LNULL){
-        p = *T;
-        *T = (*T)-> next;
-        free(p);
-    }
-    *T = LNULL;
-}
-
-
-
-bool insertItem(void* d, tPosL p, tList *L) { 
+bool insertItem(void* d, tList *L) { 
     tPosL q, r;
+    //void* lineaReservada = malloc(sizeof(d));
+    //d = lineaReservada;
 
     if (!createNode(&q))//La direcion *p la pasamos por referecia (&) como variable q,
         return false;
@@ -51,32 +42,12 @@ bool insertItem(void* d, tPosL p, tList *L) {
         q -> next = LNULL;
         if (*L == LNULL) 
             *L = q; 
-        else if (p == LNULL) { 
-            for (r = *L; r->next != LNULL; r= r->next);//Recorremos toda la lista de izquierda a derecha hasta que el nodo r apunte a LNULL, donde se pondra q en vez de LNULL
-            r -> next = q;
-        }
-        else if (p == *L) {//Si queremos añadir un nodo al principio de la lista
-            q ->next = p; //Tenemos que hacer que *L deje de apuntar a el primer nodo ya puesto, para que apunte al nuevo nodo deseado y este nuevo si que apunte al que anteriormente era el primer nodo
-            *L = q;
-        }
-        else { //Si queremos insertar en una posicion intermedia, en vez de almacenar el nuevo dato (data) en la nueva posicion (q), ponemos dicho dato en la posicion que ya estaba (p)
-    
-            q -> data =  p -> data; 
-            p -> data = d;
-            q -> next = p -> next;
-            p -> next = q; 
-        }
+        else { 
+            for (r = *L; r -> next != NULL; r = r ->next);
+                r -> next = q;
         return true;
-
+        }
     }
-}//insertItem
-
-
-tPosL findItem(void* d, tList L) {
-    tPosL p;
-
-    for(p = L; (p != LNULL) && (strcmp(p -> data, d) != 0); p = p->next);//Mientras no se llegue al final y la data de la posicion p sea distinta de la buscada, sigue buscando
-    return p;
 }
 
 bool isEmptyList(tList L) {
@@ -98,8 +69,6 @@ tPosL last(tList L) {
     for (p = L; p->next != LNULL; p = p->next); 
     return p;
 }
-
-
 
 tPosL next(tPosL p, tList L) {
     return p->next;
