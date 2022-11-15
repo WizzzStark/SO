@@ -44,8 +44,10 @@ void* getItem(tPosL p, tList L);
 tPosL first(tList L);
 tPosL last(tList L);
 tPosL next(tPosL p, tList L);
+void removeItem(tPosL p, tList *L);
 
 bool insertAllocData(tAllocData d, tList *L);
 bool insertString(char * string, tList *L);
+bool insertMmapData(tMmapData d, tList *L);
 
 #endif

@@ -6,6 +6,8 @@
 #include "linked_list.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+
 
 
 bool createNode(tPosL *p) {
@@ -18,6 +20,32 @@ void createEmptyList(tList *L) {
     *L = LNULL; //Como le estamos pasando L como variable, y queremos modificar aquello a lo que apunta L, se pone el asterisco
 }
 
+/*void freeMmap(void *p) {
+    tMmapData *data = p;
+
+
+}*/
+
+void removeItem(tPosL p, tList *L) {
+    tPosL q;
+
+    if (p == *L) {
+        printf("AQUI1\n");
+      *L = (*L) -> next;
+    } //Borrar en primera posición
+    else if (p -> next == LNULL) { //Borrar en ultima posicion
+        for (q = *L; q->next != p;  q = q->next);
+        q -> next = LNULL;
+
+    } else { //Borrar en posicion intermedia
+        q = p->next;
+        p -> data = q->data;
+        p -> next = q -> next;
+        p = q;
+    }
+    free(p -> data);
+    free(p);
+}
 
 void freeList(tList *L, void (*free_aux)(void *)){
     tPosL p, a;
@@ -28,6 +56,7 @@ void freeList(tList *L, void (*free_aux)(void *)){
         p = p->next;
         free(a);
     }
+    (*L) = LNULL;
 }
 
 bool insertItem(void* d, tList *L) { 
@@ -53,7 +82,6 @@ bool insertItem(void* d, tList *L) {
 bool insertAllocData(tAllocData d, tList *L) {
     tAllocData *allocData2 = malloc(sizeof(tAllocData));
     allocData2 -> size = d.size;
-    //sprintf(allocData2 -> allocation, "%d", *d.allocation);
 	strcpy(allocData2 -> allocation, d.allocation);
 	strcpy(allocData2 -> date, d.date);
 
@@ -61,9 +89,21 @@ bool insertAllocData(tAllocData d, tList *L) {
 }
 
 bool insertString(char * string, tList *L) {
-    char* lineaReservada = malloc(sizeof(char)*1024);
+    char* lineaReservada = malloc(sizeof(string));
 	strcpy(lineaReservada, string);
 	insertItem(lineaReservada, L);
+
+}
+
+bool insertMmapData(tMmapData d, tList *L) {
+    tMmapData *mmapData = malloc(sizeof(tMmapData));
+    mmapData -> size = d.size;
+	strcpy(mmapData -> allocation, d.allocation);
+	strcpy(mmapData -> date, d.date);
+	strcpy(mmapData -> file_name, d.file_name);
+    mmapData -> file_descriptor = d.file_descriptor;
+
+	insertItem(mmapData, L);
 
 }
 
