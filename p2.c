@@ -7,15 +7,19 @@
 
 
 int main() {
-	tComando lineaCompleta;
+
+	char lineaCompleta[1024] ;
+	char linea[1024];
+	
 	tList L;
-	tAllocList allocations;
+	tList allocations;
 
 	createEmptyList(&L);
-	createEmptyAllocList(&allocations);
+	createEmptyList(&allocations);
 
-	while(1) {
+	while(condicion) {
 		printf(AMARILLO_T"># "RESET);
+
 		if (fgets(linea, 1024, stdin) == NULL) { 
 			exit(0);
 		}
@@ -25,14 +29,11 @@ int main() {
 		if (numtrozos == 0 || (numtrozos == 1 && strcmp("comando", trozos[0]) == 0)) continue;
 
 		if(strcmp("comando", trozos[0]) != 0){
-			if(isEmptyList(L)){
-				insertItem(lineaCompleta,first(L),&L);
-			}else{
-				insertItem(lineaCompleta,next(last(L), L),&L);
-			}
+			char* lineaReservada = malloc(sizeof(char)*1024);
+			strcpy(lineaReservada, lineaCompleta);
+			insertItem(lineaReservada, &L);
 		}
 
 		procesarComando(&L, &allocations);
-		
 	}
 }
