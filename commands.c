@@ -551,6 +551,37 @@ int cmdBorrar(){
 // -----------------------------------------------------------------------------
 //------------------------------P2----------------------------------------------
 // -----------------------------------------------------------------------------
+int cmdPmap (void) /*sin argumentos*/
+ { pid_t pid;       /*hace el pmap (o equivalente) del proceso actual*/
+   char elpid[32];
+   char *argv[4]={"pmap",elpid,NULL};
+   
+   sprintf (elpid,"%d", (int) getpid());
+   if ((pid=fork())==-1){
+      perror ("Imposible crear proceso");
+      return 0;
+      }
+   if (pid==0){
+      if (execvp(argv[0],argv)==-1)
+         perror("cannot execute pmap (linux, solaris)");
+         
+      argv[0]="procstat"; argv[1]="vm"; argv[2]=elpid; argv[3]=NULL;   
+      if (execvp(argv[0],argv)==-1)/*No hay pmap, probamos procstat FreeBSD */
+         perror("cannot execute procstat (FreeBSD)");
+         
+      argv[0]="procmap",argv[1]=elpid;argv[2]=NULL;    
+            if (execvp(argv[0],argv)==-1)  /*probamos procmap OpenBSD*/
+         perror("cannot execute procmap (OpenBSD)");
+         
+      argv[0]="vmmap"; argv[1]="-interleave"; argv[2]=elpid;argv[3]=NULL;
+      if (execvp(argv[0],argv)==-1) /*probamos vmmap Mac-OS*/
+         perror("cannot execute vmmap (Mac-OS)");      
+      exit(1);
+  }
+  waitpid (pid,NULL,0);
+
+  return 0;
+}
 
 ssize_t LeerFichero (char *f, void *p, size_t cont)
 {
@@ -573,25 +604,19 @@ ssize_t LeerFichero (char *f, void *p, size_t cont)
    return n;
 }
 
-void * MapearFichero (char * fichero, int protection, int *df)
-{
+void * MapearFichero (char * fichero, int protection, int *df) {
     int map=MAP_PRIVATE,modo=O_RDONLY;
     struct stat s;
     void *p;
 
     if (protection&PROT_WRITE)
-          modo=O_RDWR;
-    if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1) {
-        perror("stat");
+        modo=O_RDWR;
+    if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1)
         return NULL;
-    }
     if ((p=mmap (NULL,s.st_size, protection,map,*df,0))==MAP_FAILED) 
-           return NULL;
-/* Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero); */
+        return NULL;
     return p;
 }
-
-
 
 int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
@@ -696,25 +721,6 @@ int freeMmap(char * fichero, tList *list) {
     return 0;
 }
 
-void do_AllocateMmap(char *arg[], tList *maps)
-{ 
-     char *perm;
-     void *p;
-     int protection=0;
-     int df;     
-     if (arg[0]==NULL)
-            //{ImprimirListaMmap(&maps); return;}
-     if ((perm=arg[1])!=NULL && strlen(perm)<4) {
-            if (strchr(perm,'r')!=NULL) protection|=PROT_READ;
-            if (strchr(perm,'w')!=NULL) protection|=PROT_WRITE;
-            if (strchr(perm,'x')!=NULL) protection|=PROT_EXEC;
-     }
-     if ((p=MapearFichero(arg[0],protection, &df))==NULL)
-             perror ("Imposible mapear ficheeeeeeeeeeero");
-     else
-             printf ("fichero %s mapeado en %p\n", arg[0], p);
-}
-
 int cmdMmap(tList *L, tList *mallocs ,tList *maps) {
     int protection = 0;
     void *p;
@@ -732,8 +738,10 @@ int cmdMmap(tList *L, tList *mallocs ,tList *maps) {
             if (strchr(trozos[2],'x')!=NULL) protection|=PROT_EXEC;
         }
 
-        if ((p=MapearFichero(trozos[1],protection, &df))==NULL)
+        if ((p=MapearFichero(trozos[1],protection, &df))==NULL) {
             perror ("Imposible mapear fichero");
+            return 0;
+        }
 
         if (time(&mmapTime) == -1) {perror("time"); return 0;}
         if (stat(trozos[1], &s) == -1) {perror("Stat"); return 0;}
@@ -824,5 +832,6 @@ cm_entrada cm_tabla[] = {
 	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
 	{"malloc", cmdMalloc, "[+] malloquea cosas"},
     {"mmap", cmdMmap, "[+] mapea cosas"},
+    {"pmap", cmdPmap, "[+] pmapea cosas"},
 	{NULL, NULL}
 };

@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include <sys/mman.h>
+#include <sys/wait.h>
 
 
 #define MAXTROZOS 512
