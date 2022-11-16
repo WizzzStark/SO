@@ -625,6 +625,16 @@ void imprimirAllocations(tList list, char* allocation_type, bool tag) {
 }
 
 // ------------------------ Malloc functions ------------------------
+int mallocFree(int size, tList *mallocs) {
+	tPosL pos;
+
+	if ((pos = findAllocDataBySize(size, *mallocs)) != LNULL) {
+		removeItem(pos, mallocs);
+	}
+
+	return 0;
+}
+
 int cmdMalloc(tList *L, tList *mallocs) {
 	time_t mallocTime;
     tAllocData allocData;
@@ -633,16 +643,8 @@ int cmdMalloc(tList *L, tList *mallocs) {
 	if (numtrozos == 1 || (numtrozos == 2 && strcmp(trozos[1], "-free") == 0)){
 		imprimirAllocations(*mallocs, "malloc", true);
 	}else {
-		if (strcmp(trozos[1], "-free") == 0){
-			tPosL p;
-			for(p=first(*mallocs);p!=LNULL;p=next(p, *mallocs)){
-				tAllocData *data = getItem(p, *L);
-				if(data->size == atoi(trozos[2])){
-					removeItem(p, mallocs);
-					break;
-				}
-			}
-		}else{
+		if (strcmp(trozos[1], "-free") == 0) mallocFree(atoi(trozos[2]), mallocs);
+		else{
 			allocationAddress = malloc(atoi(trozos[1]));
 			if (allocationAddress == NULL) {perror("malloc"); return 0;}
 
@@ -672,10 +674,11 @@ int cmdMalloc(tList *L, tList *mallocs) {
 // ------------------------------------------------------------------
 
 // ------------------------ Shared functions ------------------------
-void do_DeallocateDelkey (char *args[]){
+void do_DeallocateDelkey (int keyInt){
    key_t clave;
    int id;
-   char *key=args[2];
+   char key[50];
+   sprintf(key, "%d", keyInt);
 
    if (key==NULL || (clave=(key_t) strtoul(key,NULL,10))==IPC_PRIVATE){
         printf ("      delkey necesita clave_valida\n");
@@ -748,27 +751,27 @@ void * ObtenerMemoriaShmget (int clave, size_t tam, tList *shared){
     return (p);
 }
 
+int freeShared(int key, tList *shared) {
+	tPosL pos;
+	if ((pos = findSharedDataByKey(key, *shared)) != LNULL) {
+		removeItem(pos, shared);
+	}
+
+	return 0;
+}
+
 int cmdShared(tList *L, tList *mallocs, tList *shared){
 	void* p;
 
 	if (numtrozos == 1){
 		imprimirAllocations(*shared, "shared", true);
 	}else{
-		if (strcmp(trozos[1], "-free") == 0){
-			tPosL p;
-			for(p=first(*shared);p!=LNULL;p=next(p, *shared)){
-				tSharedData *data = getItem(p, *L);
-				if(data->key == atoi(trozos[2])){
-					removeItem(p, shared);
-					break;
-				}
-			}
-
-		}else if(strcmp(trozos[1], "-create") == 0){
+		if (strcmp(trozos[1], "-free") == 0) freeShared(atoi(trozos[2]), shared);
+		else if(strcmp(trozos[1], "-create") == 0){
 			do_AllocateCreateshared(trozos, shared);
 		}
 		else if(strcmp(trozos[1], "-delkey") == 0){
-			do_DeallocateDelkey(trozos);
+			do_DeallocateDelkey(atoi(trozos[2]));
 			return 0;
 		}else{
 			int clave = atoi(trozos[1]);
@@ -813,44 +816,41 @@ void * MapearFichero (char * fichero, int protection, int *df){
     if (protection&PROT_WRITE)
           modo=O_RDWR;
     if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1) {
-        perror("stat");
         return NULL;
     }
     if ((p=mmap (NULL,s.st_size, protection,map,*df,0))==MAP_FAILED) 
-           return NULL;
-	/* Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero); */
+        return NULL;
     return p;
+}
+
+void * removeMmap(tPosL pos, tList *list) {
+    tMmapData *mmapData;
+    void *p;
+
+	mmapData = getItem(pos, *list);
+    p = (void *) strtoul(mmapData -> allocation, NULL, 16);
+
+	if (munmap(p, mmapData -> size) == -1) {perror("munmap"); return 0;}
+    close(mmapData -> file_descriptor);
+
+    removeItem(pos, list);
+
+	return p;
 }
 
 int freeMmap(char * fichero, tList *list) {
     tPosL pos;
-    tMmapData *mmapData;
-    void *p;
+	void *p;
 
-    if (!isEmptyList(*list)) {
-        pos = first(*list);
-        while (pos != LNULL) {
-            mmapData = getItem(pos, *list);
-            if (strcmp(fichero, mmapData -> file_name) == 0) break;
-            pos = next(pos, *list);
-        }
-        if (pos != LNULL) {
-            p = (void *) strtoul(mmapData -> allocation, NULL, 16);
-
-            if (munmap(p, mmapData -> size) == -1) {perror("munmap"); return 0;}
-            close(mmapData -> file_descriptor);
-
-            removeItem(pos, list);
-
-            printf("Fichero %s unmapeado en %p\n", trozos[2], p);
-        }
-        else printf("El archivo no existe o no fue mapeado\n");
-    } else printf("El archivo no existe o no fue mapeado\n");
+	if ((pos = findMmapDataByFileName(fichero, *list)) != LNULL) {
+		p = removeMmap(pos, list);
+        printf("Fichero %s unmapeado en %p\n", trozos[2], p);
+	} else printf("El archivo no existe o no fue mapeado\n");
     
     return 0;
 }
 
-int cmdMmap(tList *L, tList *mallocs ,tList *maps) {
+int cmdMmap(tList *L, tList *mallocs , tList *shared, tList *maps) {
     int protection = 0;
     void *p;
     struct stat s;
@@ -907,6 +907,25 @@ int cmdAllocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 }
 // ------------------------------------------------------------------
 
+int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
+	tPosL pos;
+
+	if (numtrozos == 1) imprimirTodos(*L, *mallocs, *shared, *mmap);
+	if (numtrozos == 2) {
+		if ((pos = findAllocData(trozos[1], *mallocs))!= LNULL) removeItem(pos, mallocs);
+		else if ((pos = findSharedData(trozos[1], *shared))!= LNULL) removeItem(pos, shared);
+		else if ((pos = findMmapData(trozos[1], *mmap))!= LNULL) removeMmap(pos, mmap);
+
+	}
+	if (numtrozos == 3) {
+		if (strcmp(trozos[1], "-malloc") == 0) mallocFree(atoi(trozos[2]), mallocs);
+		if (strcmp(trozos[1], "-shared") == 0) freeShared(atoi(trozos[2]), shared);
+		if (strcmp(trozos[1], "-delkey") == 0) do_DeallocateDelkey(atoi(trozos[2]));
+		if (strcmp(trozos[1], "-mmap") == 0) freeMmap(trozos[2], mmap);
+	}
+
+	return 0;
+}
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
@@ -950,6 +969,8 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		}
 }
 
+
+
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
 	{"pid", cmdPid, "[+] pid : Imprime el pid del proceso que ejecuta el shell. pid -p: Imprime el pid del proceso padre del shell."},
@@ -972,5 +993,6 @@ cm_entrada cm_tabla[] = {
 	{"shared", cmdShared, "[+] sharea cosas"},
 	{"mmap", cmdMmap, "[+] mapea cosas"},
     {"pmap", cmdPmap, "[+] pmapea cosas"},
+	{"deallocate", cmdDeallocate, "[+] deallocatea cosas"},
 	{NULL, NULL}
 };

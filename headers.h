@@ -55,7 +55,7 @@ int cmdAllocate(tList *L, tList *mallocs, tList *shared, tList *mmap);
 
 void * ObtenerMemoriaShmget (key_t clave, size_t tam, tList *shared);
 void do_AllocateCreateshared (char *tr[], tList *shared);
-void do_DeallocateDelkey (char *args[]);
+void do_DeallocateDelkey (int key);
 ssize_t LeerFichero (char *f, void *p, size_t cont);
 void * MapearFichero (char * fichero, int protection, int *df);
 int freeMmap(char * fichero, tList *list);

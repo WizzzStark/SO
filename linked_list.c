@@ -6,6 +6,8 @@
 #include "linked_list.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+
 
 
 bool createNode(tPosL *p) {
@@ -47,6 +49,7 @@ void freeList(tList *L, void (*free_aux)(void *)){
         p = p->next;
         free(a);
     }
+    (*L) = LNULL;
 }
 
 
@@ -105,6 +108,69 @@ bool insertMmapData(tMmapData d, tList *L) {
 	insertItem(mmapData, L);
 
 }
+
+tPosL findMmapDataByFileName(char* file, tList L) {
+    tPosL p;
+    tMmapData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        if (strcmp(file, data->file_name) == 0) return p;
+    }
+}
+
+tPosL findSharedDataByKey(int key, tList L) {
+    tPosL p;
+    tSharedData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        if (key == data -> key) return p;
+    }
+}
+
+tPosL findAllocDataBySize(int size, tList L) {
+    tPosL p;
+    tAllocData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        if (size == data -> size) return p;
+    }
+}
+
+tPosL findMmapData(char* d, tList L) {
+    tPosL p;
+    tMmapData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        printf("ALLOC1: %s\n", data -> allocation);
+        if (strcmp(d, data->allocation) == 0) 
+        {printf("ALLOC: %s\n", data -> allocation); return p;}
+    }
+}
+
+tPosL findAllocData(char* d, tList L) {
+    tPosL p;
+    tAllocData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        if (strcmp(d, data->allocation) == 0) return p;
+    }
+}
+
+tPosL findSharedData(char* d, tList L) {
+    tPosL p;
+    tSharedData *data;
+
+    for (p = L; (p != LNULL); p = p -> next) {
+        data = p -> data;
+        if (strcmp(d, data->allocation) == 0) return p;
+    }
+}
+
 
 bool isEmptyList(tList L) {
     return L == LNULL;

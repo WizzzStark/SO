@@ -45,10 +45,18 @@ void* getItem(tPosL p, tList L);
 tPosL first(tList L);
 tPosL last(tList L);
 tPosL next(tPosL p, tList L);
+tPosL findItem(void* d, tList L);
 
 bool insertAllocData(tAllocData d, tList *L);
 bool insertSharedData(tSharedData d, tList *L);
 bool insertString(char * string, tList *L);
 bool insertMmapData(tMmapData d, tList *L);
+tPosL findAllocData(char* d, tList L);
+tPosL findMmapData(char* d, tList L);
+tPosL findSharedData(char* d, tList L);
+tPosL findMmapDataByFileName(char* d, tList L);
+tPosL findSharedDataByKey(int key, tList L);
+tPosL findAllocDataBySize(int size, tList L);
+
 
 #endif
