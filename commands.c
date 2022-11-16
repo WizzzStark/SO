@@ -927,6 +927,58 @@ int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	return 0;
 }
 
+void llenarMemoria (void *p, size_t cont, unsigned char byte) {
+  	unsigned char *arr=(unsigned char *) p;
+  	size_t i;
+
+	for (i=0; i<cont;i++)
+		arr[i]=byte;
+}
+
+/*void do_I_O_read (char *ar[]) {
+	void *p;
+	size_t cont=-1;
+	ssize_t n;
+
+	if (ar[0]==NULL || ar[1]==NULL){
+		printf ("faltan parametros\n");
+		return;
+	}
+	//p=cadtop(ar[1]);
+	sprintf(p, "%p", ar[1]);
+	if (ar[2]!=NULL)
+	cont=(size_t) atoll(ar[2]);
+
+	if ((n=LeerFichero(ar[0],p,cont))==-1)
+		perror ("Imposible leer fichero");
+	else
+		printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
+}*/
+
+int cmdMemFill() {
+	unsigned char byte;
+	byte = trozos[3][1];
+	printf("%c \n", byte);
+	llenarMemoria(trozos[1], atoi(trozos[2]), byte);
+	return 0;
+}
+
+int cmdMemDump() {
+	void *p = trozos[1];
+	unsigned char *arr=(unsigned char *) p;
+	
+	printf("%ld\n", strlen(trozos[1]));
+	for (int i = 0; i < atoi(trozos[2]); i++) {
+		printf("%c  ", arr[i]);
+	}
+	
+	puts("");
+	printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
+
+	return 0;
+
+}
+
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
@@ -994,5 +1046,7 @@ cm_entrada cm_tabla[] = {
 	{"mmap", cmdMmap, "[+] mapea cosas"},
     {"pmap", cmdPmap, "[+] pmapea cosas"},
 	{"deallocate", cmdDeallocate, "[+] deallocatea cosas"},
+	{"memfill", cmdMemFill, "[+] memfillea cosas"},
+	{"memdump", cmdMemDump, "[+] memdumpea cosas"},
 	{NULL, NULL}
 };
