@@ -6,8 +6,6 @@
 #include "linked_list.h"
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
-
 
 
 bool createNode(tPosL *p) {
@@ -19,12 +17,6 @@ bool createNode(tPosL *p) {
 void createEmptyList(tList *L) {
     *L = LNULL; //Como le estamos pasando L como variable, y queremos modificar aquello a lo que apunta L, se pone el asterisco
 }
-
-/*void freeMmap(void *p) {
-    tMmapData *data = p;
-
-
-}*/
 
 void removeItem(tPosL p, tList *L) {
     tPosL q;
@@ -55,14 +47,12 @@ void freeList(tList *L, void (*free_aux)(void *)){
         p = p->next;
         free(a);
     }
-    (*L) = LNULL;
 }
+
+
 
 bool insertItem(void* d, tList *L) { 
     tPosL q, r;
-    //void* lineaReservada = malloc(sizeof(d));
-    //d = lineaReservada;
-
     if (!createNode(&q))//La direcion *p la pasamos por referecia (&) como variable q,
         return false;
     else {
@@ -85,6 +75,16 @@ bool insertAllocData(tAllocData d, tList *L) {
 	strcpy(allocData2 -> date, d.date);
 
     insertItem(allocData2, L);
+}
+
+bool insertSharedData(tSharedData d, tList *L) {
+    tSharedData *sharedData2 = malloc(sizeof(tSharedData));
+    sharedData2 -> size = d.size;
+	strcpy(sharedData2 -> allocation, d.allocation);
+	strcpy(sharedData2 -> date, d.date);
+    sharedData2->key=d.key;
+
+    insertItem(sharedData2, L);
 }
 
 bool insertString(char * string, tList *L) {
@@ -110,7 +110,7 @@ bool isEmptyList(tList L) {
     return L == LNULL;
 }
 
-void*  getItem(tPosL p, tList L) {
+void* getItem(tPosL p, tList L) {
     void* elemento;
     elemento = p -> data;
     return elemento;

@@ -38,15 +38,16 @@ typedef struct tMmapData {
 /*Prototipos de funciones*/ 
 void createEmptyList(tList *L);
 void freeList(tList *L, void (*free_aux)(void *));
+void removeItem(tPosL p, tList *L);
 bool insertItem(void* d, tList *L);
 bool isEmptyList(tList L);
 void* getItem(tPosL p, tList L);
 tPosL first(tList L);
 tPosL last(tList L);
 tPosL next(tPosL p, tList L);
-void removeItem(tPosL p, tList *L);
 
 bool insertAllocData(tAllocData d, tList *L);
+bool insertSharedData(tSharedData d, tList *L);
 bool insertString(char * string, tList *L);
 bool insertMmapData(tMmapData d, tList *L);
 
