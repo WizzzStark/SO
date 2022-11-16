@@ -61,6 +61,11 @@ void * MapearFichero (char * fichero, int protection, int *df);
 int freeMmap(char * fichero, tList *list);
 void do_AllocateMmap(char *arg[], tList *maps);
 
+void print_variables();
+void print_funcs();
+int cmdPmap (void);
+
+
 #define RESET          "\x1b[0m"
 #define NEGRO_T        "\x1b[30m"
 #define NEGRO_F        "\x1b[40m"

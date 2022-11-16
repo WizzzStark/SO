@@ -555,6 +555,80 @@ int cmdBorrar(){
 // -----------------------------------------------------------------------------
 //------------------------------P2----------------------------------------------
 // -----------------------------------------------------------------------------
+
+// ------------------------ Memory functions ------------------------
+int cmdMemory(tList *L, tList *mallocs, tList *shared, tList *mmap){
+	if (numtrozos == 1 || strcmp(trozos[1], "-all") == 0){
+		print_variables();
+		print_funcs();
+		imprimirTodos(*L, *mallocs, *shared, *mmap);
+	}else if (strcmp(trozos[1], "-vars") == 0){
+		print_variables();
+	}else if (strcmp(trozos[1], "-blocks") == 0){
+		imprimirTodos(*L, *mallocs, *shared, *mmap);
+	}else if (strcmp(trozos[1], "-funcs") == 0){
+		print_funcs();
+	}else if (strcmp(trozos[1], "-pmap") == 0){
+		cmdPmap();
+	}
+	return 0;
+}
+
+int gl1, gl2, gl3;
+void print_variables(){
+	static int st1, st2, st3;
+	int i1,i2,i3;
+	printf("Variables locales\t %p, \t %p, \t %p\n", &i1, &i2, &i3);
+	printf("Variables globales\t %p, \t %p, \t %p\n", &gl1, &gl2, &gl3);
+	printf("Variables locales\t %p, \t %p, \t %p\n", &st1, &st2, &st3);
+}
+
+void print_funcs(){
+	printf("Funciones programa\t %p, \t %p, \t %p\n", cmdAutores, cmdInfosis, cmdFecha);
+	printf("Funciones librería\t %p, \t %p, \t %p\n", printf, strcat, strcmp);
+}
+
+// ------------------------ Memfill y recursive functions ------------------------
+void LlenarMemoria (void *p, size_t cont, unsigned char byte){
+  unsigned char *arr=(unsigned char *) p;
+  size_t i;
+
+	for (i=0; i<cont;i++)
+			arr[i]=byte;
+}
+
+//Arreglar al imprimir el unsigner char y su equivalnte en ascii en el print
+int cmdMemfill(){
+	if (numtrozos == 4){
+		void *p = (void *)strtoul(trozos[1],NULL,16);
+		unsigned long cont = strtoul(trozos[2],NULL,10);;
+		unsigned char byte = (unsigned char) strtoul(trozos[3],NULL,10);
+
+		LlenarMemoria(p, cont, byte);
+		printf("Llenando %lu bytes de memoria con el byte %u(%u) a partir de la direccion %p\n", cont, byte, p);
+	}
+	return 0;
+}
+
+void Recursiva (int n){
+  char automatico[MAX_SIZE];
+  static char estatico[MAX_SIZE];
+
+  printf ("parametro:%3d(%p) array %p, arr estatico %p\n",n,&n,automatico, estatico);
+
+  if (n>0)
+    Recursiva(n-1);
+}
+
+int cmdRecursiva (){
+	if (numtrozos==2){ // comprobar si es un numero el segundo argumento no me da la cabez aahora mismo
+		int n = atoi(trozos[1]);
+		Recursiva(n);
+	}
+	return 0;
+}
+
+// ------------------------ pmap function ------------------------
 int cmdPmap (void) /*sin argumentos*/
  { pid_t pid;       /*hace el pmap (o equivalente) del proceso actual*/
    char elpid[32];
@@ -587,6 +661,7 @@ int cmdPmap (void) /*sin argumentos*/
   return 0;
 }
 
+// ------------------------ Print lists functions ------------------------
 void imprimirTodos(tList L, tList mallocs, tList shared, tList mmap){
 	printf("******Lista de bloques asignados para el proceso %d\n", getpid());
 	imprimirAllocations(mallocs, "malloc", false);
@@ -785,7 +860,6 @@ int cmdShared(tList *L, tList *mallocs, tList *shared){
 	}
 	return 0;
 }
-// ------------------------------------------------------------------
 
 // ------------------------ Mmap functions --------------------------
 ssize_t LeerFichero (char *f, void *p, size_t cont){
@@ -898,14 +972,12 @@ int cmdMmap(tList *L, tList *mallocs , tList *shared, tList *maps) {
     }
     return 0;
 }
-// ------------------------------------------------------------------
 
-// ------------------------ Allocate functions ------------------------
+// ------------------------ Allocate/deallocate functions ------------------------
 int cmdAllocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	imprimirTodos(*L, *mallocs, *shared, *mmap);
 	return 0;
 }
-// ------------------------------------------------------------------
 
 int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	tPosL pos;
@@ -926,6 +998,7 @@ int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 
 	return 0;
 }
+// ------------------------------------------------------------------
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
@@ -994,5 +1067,8 @@ cm_entrada cm_tabla[] = {
 	{"mmap", cmdMmap, "[+] mapea cosas"},
     {"pmap", cmdPmap, "[+] pmapea cosas"},
 	{"deallocate", cmdDeallocate, "[+] deallocatea cosas"},
+	{"recursiva", cmdRecursiva, "[+] recursivea cosas"},
+	{"memfill", cmdMemfill, "[+] Fillea cosas"},
+	{"memory", cmdMemory, "[+] Memorea cosas"},
 	{NULL, NULL}
 };
