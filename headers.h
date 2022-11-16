@@ -12,6 +12,7 @@
 #include <limits.h>
 #include <sys/utsname.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <sys/stat.h>
 #include <pwd.h>
@@ -19,13 +20,11 @@
 #include <dirent.h>
 #include <fcntl.h>
 
-#include "linked_list.h"
-
-#include <ctype.h>
-
+#include <sys/shm.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 
+#include "linked_list.h"
 
 #define MAXTROZOS 512
 #define MAX_SIZE 1024
@@ -42,14 +41,25 @@ typedef struct cm_entrada {
 
 cm_entrada cm_tabla[];
 
-void procesarComando(tList *L, tList *mallocs, tList *mmaps);
+char* quitarSalto(char *str);
+void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap);
 char LetraTF (mode_t m);
 char * ConvierteModo2 (mode_t m);
 
 int cmdMalloc(tList *L, tList *mallocs);
-void imprimirTodos(tList L, tList mallocs);
+int cmdShared(tList *L, tList *mallocs, tList *shared);
+int cmdMmap(tList *L, tList *mallocs ,tList *shared, tList *maps);
+void imprimirTodos(tList L, tList mallocs, tList shared, tList mmap);
 void imprimirAllocations(tList list, char* allocation_type, bool tag);
-int cmdAllocate(tList *L, tList *mallocs);
+int cmdAllocate(tList *L, tList *mallocs, tList *shared, tList *mmap);
+
+void * ObtenerMemoriaShmget (key_t clave, size_t tam, tList *shared);
+void do_AllocateCreateshared (char *tr[], tList *shared);
+void do_DeallocateDelkey (char *args[]);
+ssize_t LeerFichero (char *f, void *p, size_t cont);
+void * MapearFichero (char * fichero, int protection, int *df);
+int freeMmap(char * fichero, tList *list);
+void do_AllocateMmap(char *arg[], tList *maps);
 
 #define RESET          "\x1b[0m"
 #define NEGRO_T        "\x1b[30m"

@@ -85,8 +85,6 @@ void imprimirLista (tList list) {
 	}
 }
 
-
-
 int TrocearCadena(char * cadena, char * trozos[]) { 
 	
 	int i=1;
@@ -97,10 +95,10 @@ int TrocearCadena(char * cadena, char * trozos[]) {
 	return i;
 }
 
-int cmdFin(tList *L, tList *mallocs) {
+int cmdFin(tList *L, tList *mallocs, tList *shared) {
 	freeList(L, free);
 	freeList(mallocs, free);
-	//freeList(shared, freeShared);
+	freeList(shared, free);
 	printf(ROJO_T "\n[!] Saliendo de la shell ...\n\n" RESET);
 	condicion = false;
 	return 1;
@@ -228,7 +226,7 @@ int cmdCarpeta() {
 	return 0;
 }
 
-int cmdComando(tList *L, tList *mallocs, tList *mmaps) {
+int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
@@ -261,7 +259,7 @@ int cmdComando(tList *L, tList *mallocs, tList *mmaps) {
 
 		numtrozos = TrocearCadena(comando, trozos);
     	free(comando);
-		procesarComando(L, mallocs, mmaps);
+		procesarComando(L, mallocs, shared, mmap);
 	}
 	else {
 		printf(ROJO_T"La lista no tiene comandos\n"RESET);
@@ -280,7 +278,9 @@ int reca_func(tList *directorios, char* dir_actual){
 	DIR *d = opendir(dir_actual);
 
 	if (d){
-        insertString(dir_actual, directorios);
+		char* lineaReservada = malloc(sizeof(char)*1024);
+		strcpy(lineaReservada, dir_actual);
+		insertItem(lineaReservada, directorios);
 
 		while((dir = readdir(d)) != NULL){
 
@@ -318,8 +318,10 @@ int recb_func(tList *directorios, char* dir_actual) {
 			}
 		}
 		if (closedir(d) == -1) perror("closedir");
-        
-        insertString(dir_actual, directorios);
+
+		char* lineaReservada = malloc(sizeof(char)*1024);
+		strcpy(lineaReservada, dir_actual);
+		insertItem(lineaReservada, directorios);
 	}
 
 	return 0;
@@ -437,7 +439,9 @@ int cmdList(){
 					recb_func(&directorios, trozos[i]);
 				}else{
 					createEmptyList(&directorios);
-                    insertString(trozos[i], &directorios);
+					char* lineaReservada = malloc(sizeof(char)*1024);
+					strcpy(lineaReservada, trozos[i]);
+					insertItem(lineaReservada, &directorios);
 				}
 
 				if (!isEmptyList(directorios)) {
@@ -583,8 +587,205 @@ int cmdPmap (void) /*sin argumentos*/
   return 0;
 }
 
-ssize_t LeerFichero (char *f, void *p, size_t cont)
-{
+void imprimirTodos(tList L, tList mallocs, tList shared, tList mmap){
+	printf("******Lista de bloques asignados para el proceso %d\n", getpid());
+	imprimirAllocations(mallocs, "malloc", false);
+	imprimirAllocations(shared, "shared", false);
+	imprimirAllocations(mmap, "mmap", false);
+}
+
+void imprimirAllocations(tList list, char* allocation_type, bool tag) {
+	tPosL pos;
+	void *data;
+    tAllocData *allocData;
+	tSharedData *sharedData; 
+    tMmapData *mmapData;
+
+	if(tag) printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
+	if (!isEmptyList(list)) {
+		pos = first(list);
+		while (pos != LNULL) {
+			data = getItem(pos, list);
+
+			if (strcmp(allocation_type, "malloc") == 0){
+                allocData = data;
+				printf("\t%s\t\t%d %s %s\n",allocData->allocation, allocData->size, allocData->date, allocation_type);
+			} else if (strcmp(allocation_type, "shared") == 0){
+				sharedData = data;
+				printf("\t%s\t\t%d %s %s (key %d)\n",sharedData->allocation, sharedData->size, sharedData->date, allocation_type, sharedData->key);
+			} else if (strcmp(allocation_type, "mmap") == 0){
+                mmapData = data;
+				printf("\t%s\t\t%d %s %s (%d)\n",mmapData->allocation, mmapData->size, mmapData->date, mmapData->file_name, mmapData->file_descriptor);
+			}
+
+			pos = next(pos, list);
+		}
+	}
+	
+}
+
+// ------------------------ Malloc functions ------------------------
+int cmdMalloc(tList *L, tList *mallocs) {
+	time_t mallocTime;
+    tAllocData allocData;
+	char * allocationAddress;
+
+	if (numtrozos == 1 || (numtrozos == 2 && strcmp(trozos[1], "-free") == 0)){
+		imprimirAllocations(*mallocs, "malloc", true);
+	}else {
+		if (strcmp(trozos[1], "-free") == 0){
+			tPosL p;
+			for(p=first(*mallocs);p!=LNULL;p=next(p, *mallocs)){
+				tAllocData *data = getItem(p, *L);
+				if(data->size == atoi(trozos[2])){
+					removeItem(p, mallocs);
+					break;
+				}
+			}
+		}else{
+			allocationAddress = malloc(atoi(trozos[1]));
+			if (allocationAddress == NULL) {perror("malloc"); return 0;}
+
+			if (time(&mallocTime) == -1) {perror("time"); return 0;}
+
+			allocData.size = atoi(trozos[1]);
+			sprintf(allocData.allocation, "%p", allocationAddress);
+			strcpy(allocData.date, ctime(&mallocTime));
+
+			printf("----------------------------------\n");
+			printf("Tamaño: %d\n",allocData.size);
+			printf("Dirección: %s\n",allocData.allocation);
+			quitarSalto(allocData.date);
+			printf("Fecha: %s\n",allocData.date);
+			printf("AllocationType: malloc\n");
+
+			insertAllocData(allocData, mallocs);
+
+			printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
+			printf("----------------------------------\n");
+
+			free(allocationAddress);
+		}
+	}
+	return 0;
+}
+// ------------------------------------------------------------------
+
+// ------------------------ Shared functions ------------------------
+void do_DeallocateDelkey (char *args[]){
+   key_t clave;
+   int id;
+   char *key=args[2];
+
+   if (key==NULL || (clave=(key_t) strtoul(key,NULL,10))==IPC_PRIVATE){
+        printf ("      delkey necesita clave_valida\n");
+        return;
+   }
+   if ((id=shmget(clave,0,0666))==-1){
+        perror ("shmget: imposible obtener memoria compartida");
+        return;
+   }
+   if (shmctl(id,IPC_RMID,NULL)==-1)
+        perror ("shmctl: imposible eliminar memoria compartida\n");
+}
+
+void do_AllocateCreateshared (char *tr[], tList *shared){
+	key_t cl;
+	size_t tam;
+	void *p;
+
+	if (tr[2]==NULL || tr[3]==NULL) {
+		imprimirAllocations(*shared, "shared", true);
+		return;
+	}
+	
+	cl=(key_t)  strtoul(tr[2],NULL,10);
+	tam=(size_t) strtoul(tr[3],NULL,10);
+	if (tam==0) {
+		printf ("No se asignan bloques de 0 bytes\n");
+		return;
+	}
+   	if ((p=ObtenerMemoriaShmget(cl,tam, shared))!=NULL){
+		printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
+   	}else{
+		printf ("Imposible asignar memoria compartida clave %lu:%s\n",(unsigned long) cl,strerror(errno));
+	}
+}
+
+void * ObtenerMemoriaShmget (int clave, size_t tam, tList *shared){
+    void * p;
+    int aux,id,flags=0777;
+    struct shmid_ds s;
+
+	tSharedData sharedData;
+	time_t sharedTime;
+
+    if (tam)     /*tam distito de 0 indica crear */
+        flags=flags | IPC_CREAT | IPC_EXCL;
+    if (clave==IPC_PRIVATE)  /*no nos vale*/
+        {errno=EINVAL; return NULL;}
+    if ((id=shmget(clave, tam, flags))==-1)
+        return (NULL);
+    if ((p=shmat(id,NULL,0))==(void*)-1){
+        aux=errno;
+        if (tam)
+            shmctl(id,IPC_RMID,NULL);
+        errno=aux;
+        return (NULL);
+    }
+    shmctl (id,IPC_STAT,&s);
+
+	if (time(&sharedTime) == -1) {perror("time");}
+	sprintf(sharedData.allocation, "%p", p);
+	sharedData.size = s.shm_segsz;
+	sharedData.key = clave;
+	strcpy(sharedData.date, ctime(&sharedTime));
+	quitarSalto(sharedData.date);
+
+	insertSharedData(sharedData,shared);
+
+ /* Guardar en la lista   InsertarNodoShared (&L, p, s.shm_segsz, clave); */
+    return (p);
+}
+
+int cmdShared(tList *L, tList *mallocs, tList *shared){
+	void* p;
+
+	if (numtrozos == 1){
+		imprimirAllocations(*shared, "shared", true);
+	}else{
+		if (strcmp(trozos[1], "-free") == 0){
+			tPosL p;
+			for(p=first(*shared);p!=LNULL;p=next(p, *shared)){
+				tSharedData *data = getItem(p, *L);
+				if(data->key == atoi(trozos[2])){
+					removeItem(p, shared);
+					break;
+				}
+			}
+
+		}else if(strcmp(trozos[1], "-create") == 0){
+			do_AllocateCreateshared(trozos, shared);
+		}
+		else if(strcmp(trozos[1], "-delkey") == 0){
+			do_DeallocateDelkey(trozos);
+			return 0;
+		}else{
+			int clave = atoi(trozos[1]);
+			if((p=ObtenerMemoriaShmget(clave,0, shared))!=NULL){
+				printf ("Memoria compartida de clave %d en %p\n",clave, p);
+			}else{
+				printf ("Imposible asignar memoria compartida clave %d:%s\n",clave,strerror(errno));
+			}
+			return 0;
+		}
+	}
+	return 0;
+}
+// ------------------------------------------------------------------
+
+// ------------------------ Mmap functions --------------------------
+ssize_t LeerFichero (char *f, void *p, size_t cont){
    struct stat s;
    ssize_t  n;  
    int df,aux;
@@ -604,93 +805,21 @@ ssize_t LeerFichero (char *f, void *p, size_t cont)
    return n;
 }
 
-void * MapearFichero (char * fichero, int protection, int *df) {
+void * MapearFichero (char * fichero, int protection, int *df){
     int map=MAP_PRIVATE,modo=O_RDONLY;
     struct stat s;
     void *p;
 
     if (protection&PROT_WRITE)
-        modo=O_RDWR;
-    if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1)
+          modo=O_RDWR;
+    if (stat(fichero,&s)==-1 || (*df=open(fichero, modo))==-1) {
+        perror("stat");
         return NULL;
+    }
     if ((p=mmap (NULL,s.st_size, protection,map,*df,0))==MAP_FAILED) 
-        return NULL;
+           return NULL;
+	/* Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero); */
     return p;
-}
-
-int cmdMalloc(tList *L, tList *mallocs) {
-	time_t mallocTime;
-    tAllocData allocData;
-	char * allocationAddress;
-
-	if (numtrozos == 1) imprimirAllocations(*mallocs, "malloc", true);
-	else {
-		allocationAddress = malloc(atoi(trozos[1]));
-		if (allocationAddress == NULL) {perror("malloc"); return 0;}
-
-		if (time(&mallocTime) == -1) {perror("time"); return 0;}
-
-		allocData.size = atoi(trozos[1]);
-		sprintf(allocData.allocation, "%p", allocationAddress);
-		strcpy(allocData.date, ctime(&mallocTime));
-
-		printf("----------------------------------\n");
-		printf("Tamaño: %d\n",allocData.size);
-		printf("Dirección: %s\n",allocData.allocation);
-		quitarSalto(allocData.date);
-		printf("Fecha: %s\n",allocData.date);
-		printf("AllocationType: malloc\n");
-
-        insertAllocData(allocData, mallocs);
-
-		printf("Asignados %d bytes en %p\n", atoi(trozos[1]), allocationAddress);
-		printf("----------------------------------\n");
-
-		free(allocationAddress);
-	}
-
-	return 0;
-
-}
-void imprimirTodos(tList L, tList mallocs){
-	printf("******Lista de bloques asignados para el proceso %d\n", getpid());
-	imprimirAllocations(mallocs, "malloc", false);
-	//imprimirAllocations(shared, "shared");
-	//imprimirAllocations(mmap, "mmap");
-}
-
-void imprimirAllocations(tList list, char* allocation_type, bool tag) {
-	tPosL pos;
-	void *data;
-    tAllocData *allocData;
-    tMmapData *mmapData;
-
-	if(tag) printf("******Lista de bloques asignados %s para el proceso %d\n", allocation_type, getpid());
-	if (!isEmptyList(list)) {
-		pos = first(list);
-		while (pos != LNULL) {
-			data = getItem(pos, list);
-
-			if (strcmp(allocation_type, "malloc") == 0){
-                allocData = data;
-				printf("\t%s\t\t%d %s %s\n",allocData->allocation, allocData->size, allocData->date, allocation_type);
-			} else if (strcmp(allocation_type, "shared") == 0){
-				//printf("\t%s\t\t%d %s %s\n",data->allocation, data->size, data->date, allocation_type);
-			} else if (strcmp(allocation_type, "mmap") == 0){
-                mmapData = data;
-				printf("\t%s\t\t%d %s %s (%d)\n",mmapData->allocation, mmapData->size, mmapData->date, mmapData->file_name, mmapData->file_descriptor);
-			}
-
-			pos = next(pos, list);
-		}
-	}
-	
-}
-
-
-int cmdAllocate(tList *L, tList *mallocs) {
-	imprimirTodos(*L, *mallocs);
-	return 0;
 }
 
 int freeMmap(char * fichero, tList *list) {
@@ -769,8 +898,17 @@ int cmdMmap(tList *L, tList *mallocs ,tList *maps) {
     }
     return 0;
 }
+// ------------------------------------------------------------------
 
-void procesarComando(tList *L, tList *mallocs, tList *mmaps){
+// ------------------------ Allocate functions ------------------------
+int cmdAllocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
+	imprimirTodos(*L, *mallocs, *shared, *mmap);
+	return 0;
+}
+// ------------------------------------------------------------------
+
+
+void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
@@ -792,8 +930,8 @@ void procesarComando(tList *L, tList *mallocs, tList *mmaps){
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
 					if (numtrozos >= 3) trozos[1] = trozos[2];
-                    numtrozos = numtrozos - 1;
-					cm_tabla[i].cm_fun(L, mallocs, mmaps);
+					numtrozos = numtrozos - 1;
+					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
 					break;
 				}
 			}
@@ -805,7 +943,7 @@ void procesarComando(tList *L, tList *mallocs, tList *mmaps){
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L, mallocs, mmaps);
+					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
 					break;
 				}
 			}
@@ -831,7 +969,8 @@ cm_entrada cm_tabla[] = {
 	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
 	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
 	{"malloc", cmdMalloc, "[+] malloquea cosas"},
-    {"mmap", cmdMmap, "[+] mapea cosas"},
+	{"shared", cmdShared, "[+] sharea cosas"},
+	{"mmap", cmdMmap, "[+] mapea cosas"},
     {"pmap", cmdPmap, "[+] pmapea cosas"},
 	{NULL, NULL}
 };

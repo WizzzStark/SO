@@ -13,13 +13,13 @@ int main() {
 	
 	tList L;
 	tList allocations;
+	tList shared;
 	tList mmaps;
-
 
 	createEmptyList(&L);
 	createEmptyList(&allocations);
+	createEmptyList(&shared);
 	createEmptyList(&mmaps);
-
 
 	while(condicion) {
 		printf(AMARILLO_T"># "RESET);
@@ -36,6 +36,6 @@ int main() {
 			insertString(lineaCompleta, &L);
 		}
 
-		procesarComando(&L, &allocations, &mmaps);
+		procesarComando(&L, &allocations, &shared, &mmaps);
 	}
 }
