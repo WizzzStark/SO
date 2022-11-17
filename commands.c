@@ -1008,25 +1008,8 @@ void llenarMemoria (char *p, size_t cont, unsigned char byte) {
 		printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
 }*/
 
-//Arreglar al imprimir el unsigner char y su equivalnte en ascii en el print
-/*int cmdMemfill(){
-	if (numtrozos == 4){
-		void *p = (void *)strtoul(trozos[1],NULL,16);
-		unsigned long cont = strtoul(trozos[2],NULL,10);;
-		unsigned char byte = (unsigned char) strtoul(trozos[3],NULL,10);
 
-		LlenarMemoria(p, cont, byte);
-		printf("Llenando %lu bytes de memoria con el byte %u(%u) a partir de la direccion %p\n", cont, byte, byte, p);
-	}
-	return 0;
-}*/
-
-int cmdMemFill() {
-	/*unsigned char byte;
-	byte = trozos[3][1];
-	printf("%c \n", byte);
-	llenarMemoria(trozos[1], atoi(trozos[2]), byte);*/
-
+/*int cmdMemFill() {
 	char *p;
 
 	long addr = strtoul(trozos[1],&p,16);
@@ -1037,6 +1020,27 @@ int cmdMemFill() {
         *(int *)addr = character;
         addr ++;
     }
+
+	return 0;
+}*/
+void LLenarMemoria(void *p, size_t cont, unsigned char byte) {
+	unsigned char *arr = (unsigned char * ) p;
+	ssize_t i;
+	
+	for (i = 0; i < cont; i++) 
+		arr[i] = byte;
+
+}
+
+int cmdMemFill() {
+	if (numtrozos == 4) {
+		void *p = (void*) strtoul(trozos[1], NULL, 16);
+		int cont = atoi(trozos[2]);
+		unsigned char byte = (unsigned char) atoi(trozos[3]);
+
+		LLenarMemoria(p, cont, byte);
+		printf("LLenando %d bytes de memoria con el byte %c(%x) a partir de la direccion %p\n", cont, trozos[3][1], trozos[3][1], p);
+	}
 
 	return 0;
 }
