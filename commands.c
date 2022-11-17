@@ -1049,7 +1049,6 @@ int cmdMemDump() {
 }
 
 ssize_t EscribirFichero (char *f, char *addr, size_t cont, bool overwrite) {
-	printf("%s\n", addr);
 	void *p = (void*) strtoul(addr, NULL, 16);
 
    	ssize_t  n;
