@@ -589,26 +589,6 @@ void print_funcs(){
 }
 
 // ------------------------ Memfill y recursive functions ------------------------
-void LlenarMemoria (void *p, size_t cont, unsigned char byte){
-  unsigned char *arr=(unsigned char *) p;
-  size_t i;
-
-	for (i=0; i<cont;i++)
-			arr[i]=byte;
-}
-
-//Arreglar al imprimir el unsigner char y su equivalnte en ascii en el print
-int cmdMemfill(){
-	if (numtrozos == 4){
-		void *p = (void *)strtoul(trozos[1],NULL,16);
-		unsigned long cont = strtoul(trozos[2],NULL,10);;
-		unsigned char byte = (unsigned char) strtoul(trozos[3],NULL,10);
-
-		LlenarMemoria(p, cont, byte);
-		printf("Llenando %lu bytes de memoria con el byte %u(%u) a partir de la direccion %p\n", cont, byte, p);
-	}
-	return 0;
-}
 
 void Recursiva (int n){
   char automatico[MAX_SIZE];
@@ -1000,10 +980,10 @@ int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 }
 // ------------------------------------------------------------------
 
-void llenarMemoria (void *p, size_t cont, unsigned char byte) {
+void llenarMemoria (char *p, size_t cont, unsigned char byte) {
   	unsigned char *arr=(unsigned char *) p;
   	size_t i;
-
+		
 	for (i=0; i<cont;i++)
 		arr[i]=byte;
 }
@@ -1028,25 +1008,84 @@ void llenarMemoria (void *p, size_t cont, unsigned char byte) {
 		printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
 }*/
 
+//Arreglar al imprimir el unsigner char y su equivalnte en ascii en el print
+/*int cmdMemfill(){
+	if (numtrozos == 4){
+		void *p = (void *)strtoul(trozos[1],NULL,16);
+		unsigned long cont = strtoul(trozos[2],NULL,10);;
+		unsigned char byte = (unsigned char) strtoul(trozos[3],NULL,10);
+
+		LlenarMemoria(p, cont, byte);
+		printf("Llenando %lu bytes de memoria con el byte %u(%u) a partir de la direccion %p\n", cont, byte, byte, p);
+	}
+	return 0;
+}*/
+
 int cmdMemFill() {
-	unsigned char byte;
+	/*unsigned char byte;
 	byte = trozos[3][1];
 	printf("%c \n", byte);
-	llenarMemoria(trozos[1], atoi(trozos[2]), byte);
+	llenarMemoria(trozos[1], atoi(trozos[2]), byte);*/
+
+	char *p;
+
+	long addr = strtoul(trozos[1],&p,16);
+
+	int character = atoi(trozos[3]);
+	int cnt = atoi(trozos[2]);
+	for(int i=0;i<cnt;i++){
+        *(int *)addr = character;
+        addr ++;
+    }
+
 	return 0;
 }
 
 int cmdMemDump() {
-	void *p = trozos[1];
-	unsigned char *arr=(unsigned char *) p;
-	
-	printf("%ld\n", strlen(trozos[1]));
-	for (int i = 0; i < atoi(trozos[2]); i++) {
-		printf("%c  ", arr[i]);
+	char *ptr;
+    long addr = strtoul(trozos[1],&ptr,16);
+	int cnt = atoi(trozos[2]);
+	long chars = addr;
+	int n = 25;
+
+	for (int i = 0; i < n; i++) {
+		chars = addr;
+		printf(" %c ", *(char *)chars);
+		chars++;
+		if (--cnt == 0) {
+			puts("");
+			for (int j = 0; j < i+1; j++) {
+				printf("%02X ", *(char *)addr);
+				addr ++;
+			}
+			break;
+		}
+		if (i == 24) {
+			puts("");
+			for (int j = 0; j < n; j++) {
+				printf("%02X ", *(char *)addr);
+				addr ++;
+			}
+			puts("");
+			i = -1;
+		}
 	}
-	
 	puts("");
-	printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
+
+	/*for (int i = 0; i < cnt; i++) {
+		long aux = addr;
+		for(int j=0;j<cnt;j++){
+            printf(" %c ", (*(char *)aux == '\n')? ' ' : *(char *)aux);
+            aux ++;
+        }
+		puts("");
+		for(int j=0;j<cnt;j++){
+			printf("%02X ", *(char *)addr);
+            addr ++;
+        }
+		puts("");*/
+	
+	//printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
 
 	return 0;
 
@@ -1119,10 +1158,9 @@ cm_entrada cm_tabla[] = {
 	{"mmap", cmdMmap, "[+] mapea cosas"},
     {"pmap", cmdPmap, "[+] pmapea cosas"},
 	{"deallocate", cmdDeallocate, "[+] deallocatea cosas"},
-
 	{"memdump", cmdMemDump, "[+] memdumpea cosas"},
 	{"recursiva", cmdRecursiva, "[+] recursivea cosas"},
-	{"memfill", cmdMemfill, "[+] Fillea cosas"},
+	{"memfill", cmdMemFill, "[+] Fillea cosas"},
 	{"memory", cmdMemory, "[+] Memorea cosas"},
 	{NULL, NULL}
 };
