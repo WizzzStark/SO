@@ -980,49 +980,16 @@ int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 }
 // ------------------------------------------------------------------
 
-void llenarMemoria (char *p, size_t cont, unsigned char byte) {
+/*void llenarMemoria (char *p, size_t cont, unsigned char byte) {
   	unsigned char *arr=(unsigned char *) p;
   	size_t i;
 		
 	for (i=0; i<cont;i++)
 		arr[i]=byte;
-}
-
-/*void do_I_O_read (char *ar[]) {
-	void *p;
-	size_t cont=-1;
-	ssize_t n;
-
-	if (ar[0]==NULL || ar[1]==NULL){
-		printf ("faltan parametros\n");
-		return;
-	}
-	//p=cadtop(ar[1]);
-	sprintf(p, "%p", ar[1]);
-	if (ar[2]!=NULL)
-	cont=(size_t) atoll(ar[2]);
-
-	if ((n=LeerFichero(ar[0],p,cont))==-1)
-		perror ("Imposible leer fichero");
-	else
-		printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
 }*/
 
 
-/*int cmdMemFill() {
-	char *p;
 
-	long addr = strtoul(trozos[1],&p,16);
-
-	int character = atoi(trozos[3]);
-	int cnt = atoi(trozos[2]);
-	for(int i=0;i<cnt;i++){
-        *(int *)addr = character;
-        addr ++;
-    }
-
-	return 0;
-}*/
 void LLenarMemoria(void *p, size_t cont, unsigned char byte) {
 	unsigned char *arr = (unsigned char * ) p;
 	ssize_t i;
@@ -1040,7 +1007,7 @@ int cmdMemFill() {
 
 		LLenarMemoria(p, cont, byte);
 		printf("LLenando %d bytes de memoria con el byte %c(%x) a partir de la direccion %p\n", cont, trozos[3][1], trozos[3][1], p);
-	}
+}
 
 	return 0;
 }
@@ -1053,7 +1020,6 @@ int cmdMemDump() {
 	int n = 25;
 
 	for (int i = 0; i < n; i++) {
-		chars = addr;
 		printf(" %c ", *(char *)chars);
 		chars++;
 		if (--cnt == 0) {
@@ -1072,28 +1038,72 @@ int cmdMemDump() {
 			}
 			puts("");
 			i = -1;
+			chars = addr;
 		}
 	}
 	puts("");
-
-	/*for (int i = 0; i < cnt; i++) {
-		long aux = addr;
-		for(int j=0;j<cnt;j++){
-            printf(" %c ", (*(char *)aux == '\n')? ' ' : *(char *)aux);
-            aux ++;
-        }
-		puts("");
-		for(int j=0;j<cnt;j++){
-			printf("%02X ", *(char *)addr);
-            addr ++;
-        }
-		puts("");*/
-	
 	//printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
 
 	return 0;
 
 }
+
+ssize_t EscribirFichero (char *f, char *addr, size_t cont, bool overwrite) {
+	printf("%s\n", addr);
+	void *p = (void*) strtoul(addr, NULL, 16);
+
+   	ssize_t  n;
+   	int df,aux, flags=O_CREAT | O_EXCL | O_WRONLY;
+
+   	if (overwrite)
+		flags=O_CREAT | O_WRONLY | O_TRUNC;
+
+  	if ((df=open(f,flags,0777))==-1)
+		return -1;
+
+    if ((n=write(df,p,cont))==-1){
+		aux=errno;
+		close(df);
+		errno=aux;
+		return -1;
+    }
+    close (df);
+    return n;
+}
+
+void do_I_O_read () {
+	//void *p;
+	size_t cont=-1;
+	ssize_t n;
+
+	if (trozos[2]==NULL || trozos[3]==NULL){
+		printf ("faltan parametros\n");
+		return;
+	}
+
+	void *p = (void*) strtoul(trozos[3], NULL, 16);
+
+	if (trozos[4]!=NULL)
+		cont=(size_t) atoll(trozos[4]);
+
+	if ((n=LeerFichero(trozos[2],p,cont))==-1)
+		perror ("Imposible leer fichero");
+	else
+		printf ("leidos %lld bytes de %s en %p\n",(long long) n,trozos[2],p);
+}
+
+
+void do_I_O_write() {
+	if (strcmp(trozos[2], "-o") == 0) EscribirFichero(trozos[3], trozos[4], atoi(trozos[5]), true);
+	else EscribirFichero(trozos[2], trozos[3], atoi(trozos[4]), false);
+}
+
+int cmdIO() {
+	if (strcmp("read", trozos[1]) == 0) do_I_O_read();
+	else do_I_O_write();
+	return 0;
+}
+
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
@@ -1138,7 +1148,6 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 }
 
 
-
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
 	{"pid", cmdPid, "[+] pid : Imprime el pid del proceso que ejecuta el shell. pid -p: Imprime el pid del proceso padre del shell."},
@@ -1166,5 +1175,6 @@ cm_entrada cm_tabla[] = {
 	{"recursiva", cmdRecursiva, "[+] recursivea cosas"},
 	{"memfill", cmdMemFill, "[+] Fillea cosas"},
 	{"memory", cmdMemory, "[+] Memorea cosas"},
+	{"i-o", cmdIO, "[+] Ionea cosas"},
 	{NULL, NULL}
 };
