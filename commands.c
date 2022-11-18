@@ -1021,7 +1021,7 @@ int cmdMemFill() {
 	return 0;
 }
 
-int cmdMemDump() {
+/*int cmdMemDump() {
 	char *ptr;
     long addr = strtoul(trozos[1],&ptr,16);
 	int cnt = atoi(trozos[2]);
@@ -1055,6 +1055,41 @@ int cmdMemDump() {
 
 	return 0;
 
+}*/
+
+int cmdMemDump() {
+    void *p = (void*) strtoul(trozos[1],NULL,16);
+	int cnt = atoi(trozos[2]);
+	void *chars = p;
+	int n = 25;
+
+	for (int i = 0; i < n; i++) {
+		printf(" %c ", *(char *)chars);
+		chars++;
+		if (--cnt == 0) {
+			puts("");
+			for (int j = 0; j < i+1; j++) {
+				printf("%02X ", *(char *)p);
+				p++;
+			}
+			break;
+		}
+		if (i == 24) {
+			puts("");
+			for (int j = 0; j < n; j++) {
+				printf("%02X ", *(char *)p);
+				p++;
+			}
+			puts("");
+			i = -1;
+			chars = p;
+		}
+	}
+	puts("");
+	//printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
+
+	return 0;
+
 }
 
 ssize_t EscribirFichero (char *f, char *addr, size_t cont, bool overwrite) {
@@ -1080,7 +1115,6 @@ ssize_t EscribirFichero (char *f, char *addr, size_t cont, bool overwrite) {
 }
 
 void do_I_O_read () {
-	//void *p;
 	size_t cont=-1;
 	ssize_t n;
 
@@ -1201,5 +1235,4 @@ cm_allocate alloc_tabla[] = {
 	{"mmap", cmdMmap},
 	{"createshared", cmdCreateShared},
 	{NULL, NULL}
-
 };
