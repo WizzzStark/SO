@@ -95,10 +95,12 @@ int TrocearCadena(char * cadena, char * trozos[]) {
 	return i;
 }
 
-int cmdFin(tList *L, tList *mallocs, tList *shared) {
+int cmdFin(tList *L, tList *mallocs, tList *shared, tList *mmaps) {
 	freeList(L, free);
 	freeList(mallocs, free);
 	freeList(shared, free);
+	freeList(mmaps, free);
+
 	printf(ROJO_T "\n[!] Saliendo de la shell ...\n\n" RESET);
 	condicion = false;
 	return 1;
@@ -990,16 +992,6 @@ int cmdDeallocate(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 }
 // ------------------------------------------------------------------
 
-/*void llenarMemoria (char *p, size_t cont, unsigned char byte) {
-  	unsigned char *arr=(unsigned char *) p;
-  	size_t i;
-		
-	for (i=0; i<cont;i++)
-		arr[i]=byte;
-}*/
-
-
-
 void LLenarMemoria(void *p, size_t cont, unsigned char byte) {
 	unsigned char *arr = (unsigned char * ) p;
 	ssize_t i;
@@ -1137,12 +1129,17 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
-					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
+					//En caso de querer añadir mas comandos que no sean comunes con el struct principal, se puede crear otro struct y ya
+					if (strcmp("createshared", &trozos[1][1]) == 0) do_AllocateCreateshared(trozos, shared);
+					else printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
+					
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
-					if (numtrozos >= 3) trozos[1] = trozos[2];
+					if (numtrozos >= 3) 
+						for (int x = 1; x < numtrozos-1; x++) trozos[x] = trozos[x+1];
+					
 					numtrozos = numtrozos - 1;
 					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
 					break;
