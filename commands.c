@@ -185,6 +185,17 @@ int cmdAyuda() {
 		CYAN_T"[+] list " AZUL_T"[-long] [-acc] [-link] [-hid] [-reca] [-recb]\n"
 		CYAN_T"[+] create " AZUL_T"[-f] <path1> <path2>...\n"
 		CYAN_T"[+] delete " AZUL_T"<path1> <path2>...\n"
+		CYAN_T"[+] malloc " AZUL_T"\n"
+		CYAN_T"[+] shared " AZUL_T"\n"
+		CYAN_T"[+] allocate " AZUL_T"\n"
+		CYAN_T"[+] deallocate " AZUL_T"\n"
+		CYAN_T"[+] mmap " AZUL_T"\n"
+		CYAN_T"[+] pmap " AZUL_T"\n"
+		CYAN_T"[+] i-o " AZUL_T"\n"
+		CYAN_T"[+] recursiva " AZUL_T"\n"
+		CYAN_T"[+] memory " AZUL_T"\n"
+		CYAN_T"[+] memfill " AZUL_T"\n"
+		CYAN_T"[+] memdump " AZUL_T"\n"
 		CYAN_T"[+] deltree " AZUL_T"<path1> <path2>...\n"RESET);
 	}
 	return 0;
@@ -998,7 +1009,6 @@ void LLenarMemoria(void *p, size_t cont, unsigned char byte) {
 	
 	for (i = 0; i < cont; i++) 
 		arr[i] = byte;
-
 }
 
 int cmdMemFill() {
@@ -1021,47 +1031,14 @@ int cmdMemFill() {
 	return 0;
 }
 
-/*int cmdMemDump() {
-	char *ptr;
-    long addr = strtoul(trozos[1],&ptr,16);
-	int cnt = atoi(trozos[2]);
-	long chars = addr;
-	int n = 25;
-
-	for (int i = 0; i < n; i++) {
-		printf(" %c ", *(char *)chars);
-		chars++;
-		if (--cnt == 0) {
-			puts("");
-			for (int j = 0; j < i+1; j++) {
-				printf("%02X ", *(char *)addr);
-				addr ++;
-			}
-			break;
-		}
-		if (i == 24) {
-			puts("");
-			for (int j = 0; j < n; j++) {
-				printf("%02X ", *(char *)addr);
-				addr ++;
-			}
-			puts("");
-			i = -1;
-			chars = addr;
-		}
-	}
-	puts("");
-	//printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
-
-	return 0;
-
-}*/
-
 int cmdMemDump() {
     void *p = (void*) strtoul(trozos[1],NULL,16);
-	int cnt = atoi(trozos[2]);
 	void *chars = p;
 	int n = 25;
+	int cnt = 25;
+	if(numtrozos==3){
+		cnt = atoi(trozos[2]);
+	}
 
 	for (int i = 0; i < n; i++) {
 		printf(" %c ", *(char *)chars);
@@ -1086,7 +1063,6 @@ int cmdMemDump() {
 		}
 	}
 	puts("");
-	//printf("Volcando %s bytes desde la direccion %s\n", trozos[2], trozos[1]);
 
 	return 0;
 
@@ -1216,16 +1192,16 @@ cm_entrada cm_tabla[] = {
 	{"comando", cmdComando, "[+] comando N: Repite el comando numero N del historial de comandos."},
 	{"deltree", cmdDelTree, "[+] deltree <path1> <path2>...: Borra recursivamente archivos y directorios"},
 	{"allocate", cmdAllocate, "[+] Asigna un bloque de memoria"},
-	{"malloc", cmdMalloc, "[+] malloquea cosas"},
-	{"shared", cmdShared, "[+] sharea cosas"},
-	{"mmap", cmdMmap, "[+] mapea cosas"},
-    {"pmap", cmdPmap, "[+] pmapea cosas"},
-	{"deallocate", cmdDeallocate, "[+] deallocatea cosas"},
-	{"memdump", cmdMemDump, "[+] memdumpea cosas"},
-	{"recursiva", cmdRecursiva, "[+] recursivea cosas"},
-	{"memfill", cmdMemFill, "[+] Fillea cosas"},
-	{"memory", cmdMemory, "[+] Memorea cosas"},
-	{"i-o", cmdIO, "[+] Ionea cosas"},
+	{"malloc", cmdMalloc, "[+] malloc [-free] [tam]	asigna un bloque memoria de tamano tam con malloc\n\t-free: desasigna un bloque de memoria de tamano tam asignado con malloc"},
+	{"shared", cmdShared, "[+] shared [-free|-create|-delkey] cl [tam]	asigna memoria compartida con clave cl en el programa\n\t-create cl tam: asigna (creando) el bloque de memoria compartida de clave cl y tamano tam\n\t-free cl: desmapea el bloque de memoria compartida de clave cl\n\t-delkey clelimina del sistema (sin desmapear) la clave de memoria cl"},
+	{"mmap", cmdMmap, "[+] mmap [-free] fich prm	mapea el fichero fich con permisos prm\n\t-free fich: desmapea el ficherofich"},
+    {"pmap", cmdPmap, "[+] Ejecuta pmap"},
+	{"deallocate", cmdDeallocate, "[+] deallocate [-malloc|-shared|-delkey|-mmap|addr]..	Desasigna un bloque de memoria\n\t-malloc tam: desasigna el bloque malloc de tamano tam\n\t-shared cl: desasigna (desmapea) el bloque de memoria compartida de clave cl\n\t-delkey cl: elimina del sistema (sin desmapear) la clave de memoria cl\n\t-mmap fich: desmapea el fichero mapeado fich\n\taddr: desasigna el bloque de memoria en la direccion addr"},
+	{"memdump", cmdMemDump, "[+] memdump addr cont 	Vuelca en pantallas los contenidos (cont bytes) de la posicion de memoria addr"},
+	{"recursiva", cmdRecursiva, "[+] recursiva [n]	Invoca a la funcion recursiva n veces"},
+	{"memfill", cmdMemFill, "[+] memfill addr cont byte 	Llena la memoria a partir de addr con byte"},
+	{"memory", cmdMemory, "[+] memory [-blocks|-funcs|-vars|-all|-pmap] ..	Muestra muestra detalles de la memoria del proceso\n\t-blocks: los bloques de memoria asignados\n\t-funcs: las direcciones de las funciones\n\t-vars: las direcciones de las variables\n\t:-all: todo\n\t-pmap: muestra la salida del comando pmap(o similar)"},
+	{"i-o", cmdIO, "[+] i-o [read|write] [-o] fiche addr cont\n\tread fich addr cont: Lee cont bytes desde fich a addr\n\twrite [-o] fich addr cont: Escribe cont bytes desde addr a fich. -o para sobreescribir\n\taddr es una direccion de memoria"},
 	{NULL, NULL}
 };
 
