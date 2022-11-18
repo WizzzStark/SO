@@ -1135,9 +1135,6 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (alloc_tabla[i].cm_nombre==NULL) {
-					//En caso de querer añadir mas comandos que no sean comunes con el struct principal, se puede crear otro struct y ya
-					/*if (strcmp("createshared", &trozos[1][1]) == 0) do_AllocateCreateshared(trozos, shared);
-					else printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);*/
 					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
 					break;
 				}
