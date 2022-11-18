@@ -226,6 +226,18 @@ int cmdCarpeta() {
 	return 0;
 }
 
+bool isANumber(char * cadena) {
+	int longitudTrozos1 = strlen(cadena);
+
+	//printf("LONG: %d", longitudTrozos1);
+	for (int x = 0; x < longitudTrozos1; x++) {
+		if (!isdigit(trozos[1][x])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
@@ -233,15 +245,13 @@ int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 	comando = malloc(sizeof(char)*MAX_SIZE);
 
 	tPosL pos;
-	int longitudTrozos1 = strlen(trozos[1]);
 
-	for (int x = 0; x < longitudTrozos1; x++) {
-		if (!isdigit(trozos[1][x])) {
-			printf(ROJO_T"Introduce un valor de índice válido de la lista (numerico) \n" RESET);
-    		free(comando);
-			return 0;
-		}
+	if (!isANumber(trozos[1])) {
+		printf(ROJO_T"Introduce un valor de índice válido de la lista (numerico) \n" RESET);
+    	free(comando);
+		return 0;
 	}
+
 
 	if (!isEmptyList(*L)) {
 		for(pos = first(*L); i <= n && pos != last(*L); pos = next(pos, *L)){
@@ -1003,10 +1013,17 @@ int cmdMemFill() {
 	if (numtrozos == 4) {
 		void *p = (void*) strtoul(trozos[1], NULL, 16);
 		int cont = atoi(trozos[2]);
-		unsigned char byte = (unsigned char) atoi(trozos[3]);
+		unsigned char byte;
+		char * caracter = malloc(sizeof(char));
+
+		if ((byte = atoi(trozos[3])) == 0) {
+			sprintf(caracter, "%d", trozos[3][1]);
+			byte = (unsigned char) atoi(caracter);
+		}
 
 		LLenarMemoria(p, cont, byte);
-		printf("LLenando %d bytes de memoria con el byte %c(%x) a partir de la direccion %p\n", cont, trozos[3][1], trozos[3][1], p);
+		printf("LLenando %d bytes de memoria con el byte %c(%x) a partir de la direccion %p\n", cont, byte, byte, p);
+		free(caracter);
 }
 
 	return 0;
