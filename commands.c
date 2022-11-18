@@ -780,8 +780,8 @@ void do_AllocateCreateshared (char *tr[], tList *shared){
 		return;
 	}
 	
-	cl=(key_t)  strtoul(tr[2],NULL,10);
-	tam=(size_t) strtoul(tr[3],NULL,10);
+	cl=(key_t)  strtoul(tr[1],NULL,10);
+	tam=(size_t) strtoul(tr[2],NULL,10);
 	if (tam==0) {
 		printf ("No se asignan bloques de 0 bytes\n");
 		return;
