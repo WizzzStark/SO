@@ -1112,6 +1112,12 @@ int cmdIO() {
 	return 0;
 }
 
+int cmdCreateShared(tList *L, tList *mallocs, tList *shared) {
+	do_AllocateCreateshared(trozos, shared);
+
+	return 0;
+}
+
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
@@ -1128,20 +1134,20 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		}
 		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
-				if (cm_tabla[i].cm_nombre==NULL) {
+				if (alloc_tabla[i].cm_nombre==NULL) {
 					//En caso de querer añadir mas comandos que no sean comunes con el struct principal, se puede crear otro struct y ya
-					if (strcmp("createshared", &trozos[1][1]) == 0) do_AllocateCreateshared(trozos, shared);
-					else printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
-					
+					/*if (strcmp("createshared", &trozos[1][1]) == 0) do_AllocateCreateshared(trozos, shared);
+					else printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);*/
+					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
 					break;
 				}
-				else if (strcmp(cm_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
+				else if (strcmp(alloc_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
 					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
 					if (numtrozos >= 3) 
 						for (int x = 1; x < numtrozos-1; x++) trozos[x] = trozos[x+1];
 					
 					numtrozos = numtrozos - 1;
-					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
+					alloc_tabla[i].cm_fun(L, mallocs, shared, mmap);
 					break;
 				}
 			}
@@ -1190,4 +1196,13 @@ cm_entrada cm_tabla[] = {
 	{"memory", cmdMemory, "[+] Memorea cosas"},
 	{"i-o", cmdIO, "[+] Ionea cosas"},
 	{NULL, NULL}
+};
+
+cm_allocate alloc_tabla[] = {
+	{"malloc", cmdMalloc},
+	{"shared", cmdShared},
+	{"mmap", cmdMmap},
+	{"createshared", cmdCreateShared},
+	{NULL, NULL}
+
 };

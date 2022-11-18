@@ -39,7 +39,13 @@ typedef struct cm_entrada {
 	char *ayuda;
 }cm_entrada ;
 
+typedef struct cm_allocate {
+	char *cm_nombre;
+	int (*cm_fun)();
+}cm_allocate ;
+
 cm_entrada cm_tabla[];
+cm_allocate alloc_tabla[];
 
 char* quitarSalto(char *str);
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap);
