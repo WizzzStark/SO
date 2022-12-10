@@ -1173,6 +1173,28 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		}
 }
 
+//P3---------------------------------------------------
+int cmdPriority () {
+	int prio;
+	errno = 0;
+
+	if (numtrozos == 1) {
+		prio = getpriority(PRIO_PROCESS, getpid());
+		if (errno == EACCES) {perror("getpriority"); return 0;}
+		printf("Prioridad del proceso %d: %d\n",getpid() ,prio);
+	}
+	else if (numtrozos == 3){
+		prio = setpriority(PRIO_PROCESS, atoi(trozos[1]), atoi(trozos[2]));
+		if (errno == EACCES) {perror("setpriority"); return 0;}
+	}
+	else if (numtrozos == 2){
+		prio = getpriority(PRIO_PROCESS, atoi(trozos[1]));
+		if (errno == EACCES) {perror("getpriority"); return 0;}
+		printf("Prioridad del proceso %d: %d\n",atoi(trozos[1]) ,prio);
+	}
+
+	return 0;
+}
 
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
@@ -1202,6 +1224,7 @@ cm_entrada cm_tabla[] = {
 	{"memfill", cmdMemFill, "[+] memfill addr cont byte 	Llena la memoria a partir de addr con byte"},
 	{"memory", cmdMemory, "[+] memory [-blocks|-funcs|-vars|-all|-pmap] ..	Muestra muestra detalles de la memoria del proceso\n\t-blocks: los bloques de memoria asignados\n\t-funcs: las direcciones de las funciones\n\t-vars: las direcciones de las variables\n\t:-all: todo\n\t-pmap: muestra la salida del comando pmap(o similar)"},
 	{"i-o", cmdIO, "[+] i-o [read|write] [-o] fiche addr cont\n\tread fich addr cont: Lee cont bytes desde fich a addr\n\twrite [-o] fich addr cont: Escribe cont bytes desde addr a fich. -o para sobreescribir\n\taddr es una direccion de memoria"},
+	{"priority", cmdPriority, "prioriza cosas"},
 	{NULL, NULL}
 };
 

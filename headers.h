@@ -24,6 +24,9 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 
+#include <sys/resource.h>
+
+
 #include "linked_list.h"
 
 #define MAXTROZOS 512
