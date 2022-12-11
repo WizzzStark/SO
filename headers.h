@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 
 #include <sys/resource.h>
+#include <sys/wait.h>
 
 
 #include "linked_list.h"

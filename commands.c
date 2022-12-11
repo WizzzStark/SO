@@ -1173,7 +1173,10 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		}
 }
 
-//P3---------------------------------------------------
+// -----------------------------------------------------------------------------
+//------------------------------P3----------------------------------------------
+// -----------------------------------------------------------------------------
+
 int cmdPriority () {
 	int prio;
 	errno = 0;
@@ -1195,6 +1198,104 @@ int cmdPriority () {
 
 	return 0;
 }
+
+int cmdShowenv(){
+	if (numtrozos == 1){
+		for (int i = 0; __environ[i]; i++){
+			printf("0x%p->main arg3[%d]=(0x%p) %s\n", &__environ[i], i, __environ[i], __environ[i]);
+		}
+	}
+	return 0;
+}
+
+int cmdShowvar(){
+    // Si no se especifica una variable, se muestran todas las variables
+	if (numtrozos == 1){
+		cmdShowenv();
+	}
+    // Si se especifica una variable, se muestra solo su valor y dirección
+    else{
+		char *var = trozos[1];
+
+		// Obtiene el valor de la variable de entorno a través del tercer argumento de main()
+		printf("Con arg3 main %s=%s(0x%p) @0x%p\n", var, getenv(var), getenv(var), &__environ[0]);
+
+		// Obtiene el valor de la variable de entorno a través de la variable global environ
+		extern char **environ;
+		char **env = environ;
+		while (*env){
+			if (strncmp(*env, var, strlen(var)) == 0)
+			{
+				printf(" Con environ %s(0x%p) @0x%p\n", *env, *env, env);
+				break;
+			}
+			env++;
+		}
+    // Obtiene el valor de la variable de entorno a través de la función getenv()
+    printf("  Con getenv %s(0x%p)\n", getenv(var), getenv(var));
+	}
+	return 0;
+}
+
+int cmdChangevar(){
+    // Comprueba si se especifica un modo válido
+    if (strcmp(trozos[1], "-p") != 0 && strcmp(trozos[1], "-e") != 0 && strcmp(trozos[1], "-a") != 0){
+        printf("Uso: cambiarvar [-a|-e|-p] var valor\n");
+		return 1;
+    }
+
+    // Cambia el valor de la variable de entorno según el modo especificado
+    if (strcmp(trozos[1], "-a") == 0){
+        // Cambia el valor de la variable de entorno a través del tercer argumento de main()
+        int len = strlen(trozos[2]) + strlen(trozos[3]) + 2;
+        char *env = malloc(len);
+        snprintf(env, len, "%s=%s", trozos[2], trozos[3]);
+        putenv(env);
+    }
+    else if (strcmp(trozos[1], "-e") == 0){
+        // Cambia el valor de la variable de entorno a través de la variable global environ
+        char **env = __environ;
+        while (*env)
+        {
+            if (strncmp(*env, trozos[2], strlen(trozos[2])) == 0)
+            {
+                *env = malloc(strlen(trozos[2]) + strlen(trozos[3]) + 2);
+                snprintf(*env, strlen(trozos[2]) + strlen(trozos[3]) + 2, "%s=%s", trozos[2], trozos[3]);
+                break;
+            }
+            env++;
+        }
+    }
+    else if (strcmp(trozos[1], "-p") == 0)
+    {
+        // Cambia el valor de la variable de entorno a través de la función putenv()
+        int len = strlen(trozos[2]) + strlen(trozos[3]) + 2;
+        char *env = malloc(len);
+        snprintf(env, len, "%s=%s", trozos[2], trozos[3]);
+        putenv(env);
+    }
+	return 0;
+}
+
+int cmdFork(){
+    pid_t pid = fork();
+
+    if (pid == 0){
+        // Este es el proceso hijo
+        printf("Ejecutando proceso %d\n", getpid());
+    }
+    else if (pid > 0){
+        // Este es el proceso padre
+        wait(NULL);
+    }
+    else{
+        // fork() ha fallado
+        printf("Failed to create child process\n");
+    }
+
+    return 0;
+}
+
 
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
@@ -1225,6 +1326,10 @@ cm_entrada cm_tabla[] = {
 	{"memory", cmdMemory, "[+] memory [-blocks|-funcs|-vars|-all|-pmap] ..	Muestra muestra detalles de la memoria del proceso\n\t-blocks: los bloques de memoria asignados\n\t-funcs: las direcciones de las funciones\n\t-vars: las direcciones de las variables\n\t:-all: todo\n\t-pmap: muestra la salida del comando pmap(o similar)"},
 	{"i-o", cmdIO, "[+] i-o [read|write] [-o] fiche addr cont\n\tread fich addr cont: Lee cont bytes desde fich a addr\n\twrite [-o] fich addr cont: Escribe cont bytes desde addr a fich. -o para sobreescribir\n\taddr es una direccion de memoria"},
 	{"priority", cmdPriority, "prioriza cosas"},
+	{"showvar", cmdShowvar, "showvarea cosas"},
+	{"changevar", cmdChangevar, "changevarea cosas"},
+	{"showenv", cmdShowenv, "showenvea cosas"},
+	{"fork", cmdFork, "forkea cosas"},
 	{NULL, NULL}
 };
 
