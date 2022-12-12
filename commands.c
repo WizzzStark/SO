@@ -1284,7 +1284,7 @@ int cmdFork(){
         // Este es el proceso padre
         wait(NULL);
     }
-    else{
+    else {
         // fork() ha fallado
         printf("Failed to create child process\n");
     }
@@ -1294,7 +1294,7 @@ int cmdFork(){
 
 int cmdExecute() {
 
-	int i = 1, x = 0;
+	int i = 0, x = 0;
 	bool useEnviron = true;
 
 	char **args3 = malloc(sizeof(char *) * numtrozos);
@@ -1309,30 +1309,37 @@ int cmdExecute() {
 		args2[j] = malloc(2000);
 	}
 
-	strcpy(environVar, trozos[1]);
+	if (strcmp(trozos[0], "execute") == 0) {
+		for (int j = 0; j < (numtrozos-1); j++) {
+			trozos[j] = trozos[j+1];
+		}
+	}
+
+	strcpy(environVar, trozos[0]);
 	while (getenv(environVar) != NULL) {
 		useEnviron = false;
 		strcpy(copia, trozos[i]);
 		strcat(copia, "=");
-		strcpy(args3[i-1], strcat(copia, getenv(environVar)));
+		strcpy(args3[i], strcat(copia, getenv(environVar)));
 		i++;
 		if (i != numtrozos) strcpy(environVar, trozos[i]);
 		else break;
 	}
-	args3[i-1] = NULL;
-	
-	if (findInPath(path, trozos[i])) {
-    	//printf ("Found at: %s\n", path);
-    }
-    //else printf ("Not found!\n"); 
+	args3[i] = NULL;
+	if (!findInPath(path, trozos[i])) {return -1;}
 
 	strcpy(args2[x], path);
 	x++;
 	i++;
+
 	while(i < numtrozos) {
 		if (trozos[i][0] == '@') {
-			if (setpriority(PRIO_PROCESS, getpid(), atoi(&trozos[i][1])) == -1) {perror("setpriority"); return 0;}
+			if (setpriority(PRIO_PROCESS, getpid(), atoi(&trozos[i][1])) == -1) {perror("setpriority"); return -1;}
 			break;
+		}
+		if (trozos[i][0] == '&') {
+			i++;
+			continue;
 		}
 		strcpy(args2[x], trozos[i]);
 		i++;
@@ -1342,45 +1349,80 @@ int cmdExecute() {
 	args2[x] = NULL;
 
 	if (useEnviron) {
-		if (execve(path, args2, __environ) == -1) {perror("execve"); return 0;}
+		if (execve(path, args2, __environ) == -1) {perror("execve"); return -1;}
 	}
 	else {
-		if (execve(path, args2, args3) == -1) {perror("execve"); return 0;}
+		if (execve(path, args2, args3) == -1) {perror("execve"); return -1;}
 	}
 
 	return 0;
 }
 
-bool foregroundExecution() {
+bool backgroundExecution() {
 
-	for (int i = (numtrozos - 2); i < numtrozos; i++) {
-		if (strcmp(trozos[i+1], "&") == 0) return true;
+	if (numtrozos > 1) {
+		for (int i = (numtrozos - 2); i < numtrozos; i++) {
+			if (strcmp(trozos[i], "&") == 0) return true;
+		}
 	}
 	return false;
+
 }
 
-void executeOnForeground() {
-	printf("FOREGROUND\n");
-	return;
+bool executeOnForeground() {
+	pid_t pid = fork();
+
+    if (pid == 0){
+        // Este es el proceso hijo
+		if (cmdExecute() == -1) {cmdFin(NULL, NULL, NULL, NULL);}
+    }
+    else if (pid > 0){
+        // Este es el proceso padre
+		//El padre espera a que acabe el hijo
+        wait(NULL);
+    }
+    else{
+        // fork() ha fallado
+        printf("Failed to create child process\n");
+    }
+
+	return true;
 }
-void executeOnBackground() {
-	printf("BACKGROUND\n");
-	return;
+bool executeOnBackground() {
+	pid_t pid = fork();
+
+    if (pid == 0){
+        // Este es el proceso hijo
+		if (cmdExecute() == -1) {return false; cmdFin(NULL, NULL, NULL, NULL);}
+    }
+    else if (pid > 0){
+        // Este es el proceso padre
+		//El padre NO espera a que acabe el hijo
+    }
+    else{
+        // fork() ha fallado
+        printf("Failed to create child process\n");
+    }
+
+	return true;
+	
 }
 
 bool doExternalCommand() {
-	if (foregroundExecution()) {
-		//Execute on foreground
-		executeOnForeground();
+	char path[1024];
 
+	if(!findInPath(path, trozos[0])) return false;
+
+	if (backgroundExecution()) {
+		//Execute on background
+		return executeOnBackground();
 	}
 	else {
-		//Execute on background
-		executeOnBackground();
-
+		//Execute on foreground
+		return executeOnForeground();
 	}
 
-	return true;
+	return false;
 }
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
@@ -1416,8 +1458,10 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		else {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
-					if (!doExternalCommand) 
+					if (!doExternalCommand()) {
 						printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
+						break;
+					}
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
