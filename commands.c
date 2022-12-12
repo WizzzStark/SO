@@ -251,7 +251,7 @@ bool isANumber(char * cadena) {
 	return true;
 }
 
-int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap) {
+int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	int n = atoi(trozos[1]); 
 	int i= 1;
 	char* comando = NULL;
@@ -282,7 +282,7 @@ int cmdComando(tList *L, tList *mallocs, tList *shared, tList *mmap) {
 
 		numtrozos = TrocearCadena(comando, trozos);
     	free(comando);
-		procesarComando(L, mallocs, shared, mmap);
+		procesarComando(L, mallocs, shared, mmap, processes);
 	}
 	else {
 		printf(ROJO_T"La lista no tiene comandos\n"RESET);
@@ -1388,12 +1388,12 @@ bool executeOnForeground() {
 
 	return true;
 }
-bool executeOnBackground() {
+bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	pid_t pid = fork();
 
     if (pid == 0){
         // Este es el proceso hijo
-		if (cmdExecute() == -1) {return false; cmdFin(NULL, NULL, NULL, NULL);}
+		if (cmdExecute() == -1) {cmdFin(NULL, NULL, NULL, NULL);}
     }
     else if (pid > 0){
         // Este es el proceso padre
@@ -1408,14 +1408,14 @@ bool executeOnBackground() {
 	
 }
 
-bool doExternalCommand() {
+bool doExternalCommand(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	char path[1024];
 
 	if(!findInPath(path, trozos[0])) return false;
 
 	if (backgroundExecution()) {
 		//Execute on background
-		return executeOnBackground();
+		return executeOnBackground(L, mallocs, shared, mmap, processes);
 	}
 	else {
 		//Execute on foreground
@@ -1425,7 +1425,7 @@ bool doExternalCommand() {
 	return false;
 }
 
-void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
+void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes){
 		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
@@ -1450,7 +1450,7 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 						for (int x = 1; x < numtrozos-1; x++) trozos[x] = trozos[x+1];
 					
 					numtrozos = numtrozos - 1;
-					alloc_tabla[i].cm_fun(L, mallocs, shared, mmap);
+					alloc_tabla[i].cm_fun(L, mallocs, shared, mmap, processes);
 					break;
 				}
 			}
@@ -1458,14 +1458,14 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 		else {
 			for (int i = 0; ;i++) {
 				if (cm_tabla[i].cm_nombre==NULL) {
-					if (!doExternalCommand()) {
+					if (!doExternalCommand(L, mallocs, shared, mmap, processes)) {
 						printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
 						break;
 					}
 					break;
 				}
 				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
+					cm_tabla[i].cm_fun(L, mallocs, shared, mmap, processes);
 					break;
 				}
 			}

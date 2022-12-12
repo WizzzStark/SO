@@ -54,7 +54,7 @@ cm_entrada cm_tabla[];
 cm_allocate alloc_tabla[];
 
 char* quitarSalto(char *str);
-void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap);
+void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes);
 char LetraTF (mode_t m);
 char * ConvierteModo2 (mode_t m);
 

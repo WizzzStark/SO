@@ -60,6 +60,8 @@ bool insertAllocData(tAllocData d, tList *L);
 bool insertSharedData(tSharedData d, tList *L);
 bool insertString(char * string, tList *L);
 bool insertMmapData(tMmapData d, tList *L);
+bool insertProcessData(tProcessData d, tList *L);
+
 tPosL findAllocData(char* d, tList L);
 tPosL findMmapData(char* d, tList L);
 tPosL findSharedData(char* d, tList L);
