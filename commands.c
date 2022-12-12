@@ -1177,6 +1177,44 @@ void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
 //------------------------------P3----------------------------------------------
 // -----------------------------------------------------------------------------
 
+short file_exists(char *filename)
+{
+  int fd=open(filename, O_RDONLY);
+  if (fd==-1)
+    {
+      if (errno==2)             /* If errno==2 it means file not found */
+        return 0;               /* otherwise there is another error at */
+      else                      /* reading file, for example path not  */
+        return -1;              /* found, no memory, etc */
+    }
+  close(fd);                    /* If we close the file, it exists */
+  return 1;
+}
+
+int findInPath(char *result, char *executable)
+{
+  char *path = getenv("PATH");
+  char *saveptr;
+  char *tmpstr = malloc(strlen(path)+strlen(executable)+2);
+  char *directory = strtok_r(path, ":", &saveptr);
+  char *slash = "/";
+  short found = 0;
+  while ( (directory != NULL) && (!found) )
+    {
+      sprintf (tmpstr, "%s%s%s", directory, (directory[strlen(directory)-1]=='/')?"":slash, executable);
+      if (file_exists(tmpstr))
+    found = 1;
+      directory = strtok_r(NULL, ":", &saveptr);
+    }
+
+  if (found)
+    strcpy(result, tmpstr);
+
+  free(tmpstr);
+
+  return found;
+}
+
 int cmdPriority () {
 	int prio;
 	errno = 0;
@@ -1296,6 +1334,77 @@ int cmdFork(){
     return 0;
 }
 
+int cmdExecute() {
+
+	int i = 1, x = 0;
+	bool useEnviron = true;
+
+	char **args3 = malloc(sizeof(char *) * numtrozos);
+	char **args2 = malloc(sizeof(char *) * numtrozos);
+
+	char * environVar = malloc(100);
+	char copia[1000];
+	char path[2000];
+
+	extern char **environ;
+
+	for (int j = 0; j < numtrozos; j++) {
+		args3[j] = malloc(2000);
+		args2[j] = malloc(2000);
+	}
+
+	printf("%d\n", numtrozos);
+
+	strcpy(environVar, trozos[1]);
+	while (getenv(environVar) != NULL) {
+		useEnviron = false;
+		strcpy(copia, trozos[i]);
+		strcat(copia, "=");
+		strcpy(args3[i-1], strcat(copia, getenv(environVar)));
+		i++;
+		if (i != numtrozos) strcpy(environVar, trozos[i]);
+		else break;
+	}
+	args3[i-1] = NULL;
+	
+	printf("%s\n", trozos[1]);
+	if (findInPath(path, trozos[i])) {
+    	printf ("Found at: %s\n", path);
+    }
+    else printf ("Not found!\n"); 
+
+	strcpy(args2[x], path);
+	x++;
+	i++;
+	while(i < numtrozos) {
+		if (trozos[i][0] == '@') {
+			if (setpriority(PRIO_PROCESS, getpid(), atoi(&trozos[i][1])) == -1) {perror("setpriority"); return 0;}
+			break;
+		}
+		strcpy(args2[x], trozos[i]);
+		i++;
+		x++;
+		
+	}
+	args2[x] = NULL;
+	
+	//if (setenv("SHELL", path, 1) == -1) {perror("setenv"); return 0;}
+	if (setenv("PATH", "/home/juan/software/idea/bin:/home/juan/software/apache-maven-3.8.6/bin:/home/juan/software/jdk-17.0.4.1+1/bin:/home/juan/software/idea/bin:/home/juan/software/apache-maven-3.8.6/bin:/home/juan/software/jdk-17.0.4.1+1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin", 1) == -1) {perror("setenv"); return 0;}
+
+
+	printf("%s\n", __environ[56]);
+
+	if (useEnviron) {
+		printf("ASDASD\n");
+		if (execve(path, args2, __environ) == -1) {perror("execve"); return 0;}
+	}
+	else {
+		if (execve("/bin/xterm", args2, args3) == -1) {perror("execve"); return 0;}
+	}
+
+	return 0;
+}
+
 
 cm_entrada cm_tabla[] = {
 	{"autores", cmdAutores, "[+] autores: Imprime los nombres y logins del programa autores. autores -l: Imprime solo los logins. autores -n: Imprime solo los nombres."},
@@ -1330,6 +1439,7 @@ cm_entrada cm_tabla[] = {
 	{"changevar", cmdChangevar, "changevarea cosas"},
 	{"showenv", cmdShowenv, "showenvea cosas"},
 	{"fork", cmdFork, "forkea cosas"},
+	{"execute", cmdExecute, "executea cosas"},
 	{NULL, NULL}
 };
 
