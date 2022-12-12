@@ -1191,9 +1191,9 @@ short file_exists(char *filename)
   return 1;
 }
 
-int findInPath(char *result, char *executable)
-{
-  char *path = getenv("PATH");
+int findInPath(char *result, char *executable) {
+  char path[2000];
+  strcpy(path, getenv("PATH"));
   char *saveptr;
   char *tmpstr = malloc(strlen(path)+strlen(executable)+2);
   char *directory = strtok_r(path, ":", &saveptr);
@@ -1346,14 +1346,10 @@ int cmdExecute() {
 	char copia[1000];
 	char path[2000];
 
-	extern char **environ;
-
 	for (int j = 0; j < numtrozos; j++) {
 		args3[j] = malloc(2000);
 		args2[j] = malloc(2000);
 	}
-
-	printf("%d\n", numtrozos);
 
 	strcpy(environVar, trozos[1]);
 	while (getenv(environVar) != NULL) {
@@ -1367,11 +1363,10 @@ int cmdExecute() {
 	}
 	args3[i-1] = NULL;
 	
-	printf("%s\n", trozos[1]);
 	if (findInPath(path, trozos[i])) {
-    	printf ("Found at: %s\n", path);
+    	//printf ("Found at: %s\n", path);
     }
-    else printf ("Not found!\n"); 
+    //else printf ("Not found!\n"); 
 
 	strcpy(args2[x], path);
 	x++;
@@ -1387,19 +1382,12 @@ int cmdExecute() {
 		
 	}
 	args2[x] = NULL;
-	
-	//if (setenv("SHELL", path, 1) == -1) {perror("setenv"); return 0;}
-	if (setenv("PATH", "/home/juan/software/idea/bin:/home/juan/software/apache-maven-3.8.6/bin:/home/juan/software/jdk-17.0.4.1+1/bin:/home/juan/software/idea/bin:/home/juan/software/apache-maven-3.8.6/bin:/home/juan/software/jdk-17.0.4.1+1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin", 1) == -1) {perror("setenv"); return 0;}
-
-
-	printf("%s\n", __environ[56]);
 
 	if (useEnviron) {
-		printf("ASDASD\n");
 		if (execve(path, args2, __environ) == -1) {perror("execve"); return 0;}
 	}
 	else {
-		if (execve("/bin/xterm", args2, args3) == -1) {perror("execve"); return 0;}
+		if (execve(path, args2, args3) == -1) {perror("execve"); return 0;}
 	}
 
 	return 0;
