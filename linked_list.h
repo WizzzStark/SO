@@ -35,6 +35,15 @@ typedef struct tMmapData {
     char file_name[1024];
 } tMmapData;
 
+typedef struct tProcessData {
+    int PID;
+    char date[1024];
+    char status[1024];
+    int signalValue;
+    char commandLine[1024];
+    int priority;
+} tProcessData;
+
 /*Prototipos de funciones*/ 
 void createEmptyList(tList *L);
 void freeList(tList *L, void (*free_aux)(void *));

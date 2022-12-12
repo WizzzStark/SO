@@ -1129,49 +1129,7 @@ int cmdCreateShared(tList *L, tList *mallocs, tList *shared) {
 }
 
 
-void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
-		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
-			for (int i = 0; ;i++) {
-				if (cm_tabla[i].cm_nombre==NULL) {
-					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
-					break;
-				}
-				else if (strcmp(cm_tabla[i].cm_nombre, trozos[1]) == 0) {
-					printf(AZUL_T"%s\n"RESET, cm_tabla[i].ayuda);
-					break;
-				}
-			}
-		}
-		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
-			for (int i = 0; ;i++) {
-				if (alloc_tabla[i].cm_nombre==NULL) {
-					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
-					break;
-				}
-				else if (strcmp(alloc_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
-					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
-					if (numtrozos >= 3) 
-						for (int x = 1; x < numtrozos-1; x++) trozos[x] = trozos[x+1];
-					
-					numtrozos = numtrozos - 1;
-					alloc_tabla[i].cm_fun(L, mallocs, shared, mmap);
-					break;
-				}
-			}
-		}
-		else {
-			for (int i = 0; ;i++) {
-				if (cm_tabla[i].cm_nombre==NULL) {
-					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
-					break;
-				}
-				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
-					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
-					break;
-				}
-			}
-		}
-}
+
 
 // -----------------------------------------------------------------------------
 //------------------------------P3----------------------------------------------
@@ -1391,6 +1349,83 @@ int cmdExecute() {
 	}
 
 	return 0;
+}
+
+bool foregroundExecution() {
+
+	for (int i = (numtrozos - 2); i < numtrozos; i++) {
+		if (strcmp(trozos[i+1], "&") == 0) return true;
+	}
+	return false;
+}
+
+void executeOnForeground() {
+	printf("FOREGROUND\n");
+	return;
+}
+void executeOnBackground() {
+	printf("BACKGROUND\n");
+	return;
+}
+
+bool doExternalCommand() {
+	if (foregroundExecution()) {
+		//Execute on foreground
+		executeOnForeground();
+
+	}
+	else {
+		//Execute on background
+		executeOnBackground();
+
+	}
+
+	return true;
+}
+
+void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap){
+		if (strcmp(trozos[0], "ayuda") == 0 && numtrozos > 1) {
+			for (int i = 0; ;i++) {
+				if (cm_tabla[i].cm_nombre==NULL) {
+					printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[1]);
+					break;
+				}
+				else if (strcmp(cm_tabla[i].cm_nombre, trozos[1]) == 0) {
+					printf(AZUL_T"%s\n"RESET, cm_tabla[i].ayuda);
+					break;
+				}
+			}
+		}
+		else if (strcmp(trozos[0], "allocate") == 0 && numtrozos > 1) {
+			for (int i = 0; ;i++) {
+				if (alloc_tabla[i].cm_nombre==NULL) {
+					printf(ROJO_T"%s: uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n"RESET, trozos[1]);
+					break;
+				}
+				else if (strcmp(alloc_tabla[i].cm_nombre, &trozos[1][1]) == 0) {
+					if (numtrozos >= 2) trozos[0] = &trozos[1][1];
+					if (numtrozos >= 3) 
+						for (int x = 1; x < numtrozos-1; x++) trozos[x] = trozos[x+1];
+					
+					numtrozos = numtrozos - 1;
+					alloc_tabla[i].cm_fun(L, mallocs, shared, mmap);
+					break;
+				}
+			}
+		}
+		else {
+			for (int i = 0; ;i++) {
+				if (cm_tabla[i].cm_nombre==NULL) {
+					if (!doExternalCommand) 
+						printf(ROJO_T"%s: comando no reconocido\n"RESET, trozos[0]);
+					break;
+				}
+				else if (strcmp(cm_tabla[i].cm_nombre, trozos[0]) == 0) {
+					cm_tabla[i].cm_fun(L, mallocs, shared, mmap);
+					break;
+				}
+			}
+		}
 }
 
 
