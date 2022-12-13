@@ -9,7 +9,6 @@
 #include <stdio.h>
 
 
-
 bool createNode(tPosL *p) {
     *p = malloc(sizeof(struct tNode)); 
     return *p != LNULL; //Si malloc devulve LNULL (No se pudo asignar memoria suficiente para el noodo), no se puede crear nodo
@@ -112,12 +111,12 @@ bool insertMmapData(tMmapData d, tList *L) {
 bool insertProcessData(tProcessData d, tList *L) {
     tProcessData *tProcessData = malloc(sizeof(tProcessData));
     
-    strcpy(tProcessData -> commandLine, d.commandLine);
-    strcpy(tProcessData -> date, d.date);
-    strcpy(tProcessData -> status, d.status);
+    //strcpy(tProcessData -> commandLine, d.commandLine);
+    //strcpy(tProcessData -> date, d.date);
+    //strcpy(tProcessData -> status, d.status);
     tProcessData -> PID = d.PID;
     tProcessData -> signalValue = d.signalValue;
-    tProcessData -> priority = d.priority;
+    //tProcessData -> priority = d.priority;
 
 	insertItem(tProcessData, L);
 }

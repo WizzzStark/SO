@@ -1135,42 +1135,39 @@ int cmdCreateShared(tList *L, tList *mallocs, tList *shared) {
 //------------------------------P3----------------------------------------------
 // -----------------------------------------------------------------------------
 
-short file_exists(char *filename)
-{
-  int fd=open(filename, O_RDONLY);
-  if (fd==-1)
-    {
-      if (errno==2)             /* If errno==2 it means file not found */
-        return 0;               /* otherwise there is another error at */
-      else                      /* reading file, for example path not  */
-        return -1;              /* found, no memory, etc */
+short file_exists(char *filename) {
+	int fd=open(filename, O_RDONLY);
+  	if (fd==-1) {
+    	if (errno==2)             /* If errno==2 it means file not found */
+    		return 0;               /* otherwise there is another error at */
+      	else                      /* reading file, for example path not  */
+        	return -1;              /* found, no memory, etc */
     }
-  close(fd);                    /* If we close the file, it exists */
-  return 1;
+  	close(fd);                    /* If we close the file, it exists */
+  	return 1;
 }
 
 int findInPath(char *result, char *executable) {
-  char path[2000];
-  strcpy(path, getenv("PATH"));
-  char *saveptr;
-  char *tmpstr = malloc(strlen(path)+strlen(executable)+2);
-  char *directory = strtok_r(path, ":", &saveptr);
-  char *slash = "/";
-  short found = 0;
-  while ( (directory != NULL) && (!found) )
-    {
-      sprintf (tmpstr, "%s%s%s", directory, (directory[strlen(directory)-1]=='/')?"":slash, executable);
-      if (file_exists(tmpstr))
-    found = 1;
-      directory = strtok_r(NULL, ":", &saveptr);
+	char path[2000];
+	strcpy(path, getenv("PATH"));
+  	char *saveptr;
+  	char *tmpstr = malloc(strlen(path)+strlen(executable)+2);
+  	char *directory = strtok_r(path, ":", &saveptr);
+  	char *slash = "/";
+	short found = 0;
+  	while ( (directory != NULL) && (!found)) {
+    	sprintf (tmpstr, "%s%s%s", directory, (directory[strlen(directory)-1]=='/')?"":slash, executable);
+		if (file_exists(tmpstr))
+    	found = 1;
+      	directory = strtok_r(NULL, ":", &saveptr);
     }
 
-  if (found)
+  	if (found)
     strcpy(result, tmpstr);
 
-  free(tmpstr);
+  	free(tmpstr);
 
-  return found;
+  	return found;
 }
 
 int cmdPriority () {
@@ -1282,7 +1279,8 @@ int cmdFork(){
     }
     else if (pid > 0){
         // Este es el proceso padre
-        wait(NULL);
+        waitpid(pid, NULL, 0);
+
     }
     else {
         // fork() ha fallado
@@ -1372,6 +1370,8 @@ bool backgroundExecution() {
 bool executeOnForeground() {
 	pid_t pid = fork();
 
+	int *status = NULL;
+
     if (pid == 0){
         // Este es el proceso hijo
 		if (cmdExecute() == -1) {cmdFin(NULL, NULL, NULL, NULL);}
@@ -1379,7 +1379,7 @@ bool executeOnForeground() {
     else if (pid > 0){
         // Este es el proceso padre
 		//El padre espera a que acabe el hijo
-        wait(NULL);
+		waitpid(pid, status, 0);
     }
     else{
         // fork() ha fallado
@@ -1388,8 +1388,14 @@ bool executeOnForeground() {
 
 	return true;
 }
+
+/*
+kill -9
+
+*/
 bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	pid_t pid = fork();
+	tProcessData processData;
 
     if (pid == 0){
         // Este es el proceso hijo
@@ -1398,6 +1404,10 @@ bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, t
     else if (pid > 0){
         // Este es el proceso padre
 		//El padre NO espera a que acabe el hijo
+		//waitpid(pid, NULL, WNOHANG);
+		processData.PID = pid;
+		insertProcessData(processData, processes);
+
     }
     else{
         // fork() ha fallado
@@ -1423,6 +1433,113 @@ bool doExternalCommand(tList *L, tList *mallocs, tList *shared, tList *mmap, tLi
 	}
 
 	return false;
+}
+
+SEN sigstrnum[]={   
+	{"HUP", SIGHUP},
+	{"INT", SIGINT},
+	{"QUIT", SIGQUIT},
+	{"ILL", SIGILL}, 
+	{"TRAP", SIGTRAP},
+	{"ABRT", SIGABRT},
+	{"IOT", SIGIOT},
+	{"BUS", SIGBUS},
+	{"FPE", SIGFPE},
+	{"KILL", SIGKILL},
+	{"USR1", SIGUSR1},
+	{"SEGV", SIGSEGV},
+	{"USR2", SIGUSR2}, 
+	{"PIPE", SIGPIPE},
+	{"ALRM", SIGALRM},
+	{"TERM", SIGTERM},
+	{"CHLD", SIGCHLD},
+	{"CONT", SIGCONT},
+	{"STOP", SIGSTOP},
+	{"TSTP", SIGTSTP}, 
+	{"TTIN", SIGTTIN},
+	{"TTOU", SIGTTOU},
+	{"URG", SIGURG},
+	{"XCPU", SIGXCPU},
+	{"XFSZ", SIGXFSZ},
+	{"VTALRM", SIGVTALRM},
+	{"PROF", SIGPROF},
+	{"WINCH", SIGWINCH}, 
+	{"IO", SIGIO},
+	{"SYS", SIGSYS},
+	#ifdef SIGPOLL
+		{"POLL", SIGPOLL},
+	#endif
+	#ifdef SIGPWR
+		{"PWR", SIGPWR},
+	#endif
+	#ifdef SIGEMT
+		{"EMT", SIGEMT},
+	#endif
+	#ifdef SIGINFO
+		{"INFO", SIGINFO},
+	#endif
+	#ifdef SIGSTKFLT
+		{"STKFLT", SIGSTKFLT},
+	#endif
+	#ifdef SIGCLD
+		{"CLD", SIGCLD},
+	#endif
+	#ifdef SIGLOST
+		{"LOST", SIGLOST},
+	#endif
+	#ifdef SIGCANCEL
+		{"CANCEL", SIGCANCEL},
+	#endif
+	#ifdef SIGTHAW
+		{"THAW", SIGTHAW},
+	#endif
+	#ifdef SIGFREEZE
+		{"FREEZE", SIGFREEZE},
+	#endif
+	#ifdef SIGLWP
+		{"LWP", SIGLWP},
+	#endif
+	#ifdef SIGWAITING
+		{"WAITING", SIGWAITING},
+	#endif
+ 	{NULL,-1}
+};
+
+ /*devuelve el nombre senal a partir de la senal*/ 
+char *NombreSenal(int sen) {
+ 	int i;
+  	for (i=0; sigstrnum[i].nombre!=NULL; i++)
+  		if (sen==sigstrnum[i].senal)
+			return sigstrnum[i].nombre;
+	return ("SIGUNKNOWN");
+}
+
+void imprimirProcesos(tList processes) {
+	tPosL pos;
+	tProcessData *processData;
+	//int *status = malloc(sizeof(int*));
+	int status;
+
+	if (!isEmptyList(processes)) {
+		pos = first(processes);
+		int j = 0;
+		while (pos != LNULL) {
+			processData = getItem(pos, processes);
+			
+			if (waitpid(processData -> PID, &status, WNOHANG | WUNTRACED) == -1) {perror("waitpid"); return;}
+
+			printf("PID: %d SIGNAL_VALUE: %d NOMBRE_SEÑAL: %s\n", processData -> PID, status, NombreSenal(status));
+			pos = next(pos, processes);
+			j++;
+		}
+	}
+
+	return;
+}
+
+int cmdListjobs(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
+	imprimirProcesos(*processes);
+	return 0;
 }
 
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes){
@@ -1507,6 +1624,7 @@ cm_entrada cm_tabla[] = {
 	{"showenv", cmdShowenv, "showenvea cosas"},
 	{"fork", cmdFork, "forkea cosas"},
 	{"execute", cmdExecute, "executea cosas"},
+	{"listjobs", cmdListjobs, "listjobea cosas"},
 	{NULL, NULL}
 };
 

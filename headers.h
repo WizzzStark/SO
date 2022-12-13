@@ -50,8 +50,14 @@ typedef struct cm_allocate {
 	int (*cm_fun)();
 }cm_allocate ;
 
+typedef struct SEN {
+	char *nombre;
+	int senal;
+}SEN;
+
 cm_entrada cm_tabla[];
 cm_allocate alloc_tabla[];
+SEN sigstrnum[];
 
 char* quitarSalto(char *str);
 void procesarComando(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes);

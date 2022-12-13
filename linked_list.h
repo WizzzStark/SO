@@ -37,11 +37,11 @@ typedef struct tMmapData {
 
 typedef struct tProcessData {
     int PID;
-    char date[1024];
-    char status[1024];
-    int signalValue;
-    char commandLine[1024];
-    int priority;
+    //char date[1024];
+    //char status[1024];
+    int *signalValue;
+    //char commandLine[1024];
+    //int priority;
 } tProcessData;
 
 /*Prototipos de funciones*/ 
