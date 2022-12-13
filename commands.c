@@ -1217,8 +1217,7 @@ int cmdShowvar(){
 		extern char **environ;
 		char **env = environ;
 		while (*env){
-			if (strncmp(*env, var, strlen(var)) == 0)
-			{
+			if (strncmp(*env, var, strlen(var)) == 0) {
 				printf(" Con environ %s(0x%p) @0x%p\n", *env, *env, env);
 				break;
 			}
@@ -1526,7 +1525,16 @@ void imprimirProcesos(tList processes) {
 		while (pos != LNULL) {
 			processData = getItem(pos, processes);
 			
-			if (waitpid(processData -> PID, &status, WNOHANG | WUNTRACED) == -1) {perror("waitpid"); return;}
+			if (waitpid(processData -> PID, &status, WNOHANG | WUNTRACED | WCONTINUED) == -1) {perror("waitpid"); return;}
+
+			if(WIFSTOPPED(status)){
+				printf("PAROU\n");
+
+			}
+			if(WIFCONTINUED(status)){
+				printf("SIGUE\n");
+
+			}
 
 			printf("PID: %d SIGNAL_VALUE: %d NOMBRE_SEÑAL: %s\n", processData -> PID, status, NombreSenal(status));
 			pos = next(pos, processes);
