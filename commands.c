@@ -1217,7 +1217,8 @@ int cmdShowvar(){
 		extern char **environ;
 		char **env = environ;
 		while (*env){
-			if (strncmp(*env, var, strlen(var)) == 0) {
+			if (strncmp(*env, var, strlen(var)) == 0)
+			{
 				printf(" Con environ %s(0x%p) @0x%p\n", *env, *env, env);
 				break;
 			}
@@ -1388,10 +1389,6 @@ bool executeOnForeground() {
 	return true;
 }
 
-/*
-kill -9
-
-*/
 bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	pid_t pid = fork();
 	tProcessData processData;
@@ -1405,6 +1402,7 @@ bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, t
 		//El padre NO espera a que acabe el hijo
 		//waitpid(pid, NULL, WNOHANG);
 		processData.PID = pid;
+		//processData.p = pid;
 		insertProcessData(processData, processes);
 
     }
@@ -1516,8 +1514,6 @@ char *NombreSenal(int sen) {
 void imprimirProcesos(tList processes) {
 	tPosL pos;
 	tProcessData *processData;
-	//int *status = malloc(sizeof(int*));
-	int status;
 
 	if (!isEmptyList(processes)) {
 		pos = first(processes);
@@ -1525,18 +1521,19 @@ void imprimirProcesos(tList processes) {
 		while (pos != LNULL) {
 			processData = getItem(pos, processes);
 			
-			if (waitpid(processData -> PID, &status, WNOHANG | WUNTRACED | WCONTINUED) == -1) {perror("waitpid"); return;}
+			//f(*processData->p != -1){
+				if (waitpid(processData->PID, &processData->signalValue, WNOHANG | WUNTRACED | WCONTINUED) == processData->PID) {perror("waitpid");}
+			//}
 
-			if(WIFSTOPPED(status)){
+			if(WIFSTOPPED(processData->signalValue)){
 				printf("PAROU\n");
 
 			}
-			if(WIFCONTINUED(status)){
+			if(WIFCONTINUED(processData->signalValue)){
 				printf("SIGUE\n");
-
 			}
 
-			printf("PID: %d SIGNAL_VALUE: %d NOMBRE_SEÑAL: %s\n", processData -> PID, status, NombreSenal(status));
+			printf("PID: %d SIGNAL_VALUE: %d NOMBRE_SEÑAL: %s\n", processData -> PID, processData->signalValue, NombreSenal(processData->signalValue));
 			pos = next(pos, processes);
 			j++;
 		}
@@ -1547,6 +1544,32 @@ void imprimirProcesos(tList processes) {
 
 int cmdListjobs(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	imprimirProcesos(*processes);
+	return 0;
+}
+
+int cmdDeljobs(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes){
+    if(numtrozos==0){
+		 cmdListjobs(L,mallocs, shared, mmap, processes);
+	}else{
+		bool term=false, sig=false;
+		tPosL pos;
+        for(int i=0;i<numtrozos;i++){
+            if(strcmp(trozos[i],"-term")==0) term=true;
+            if(strcmp(trozos[i],"-sig")==0) sig=true;
+        }
+		tProcessData *proceso;
+		for(pos=first(*processes); pos != last(*L); pos=next(pos,*processes)){
+			proceso = getItem(pos,*processes);
+			if(WIFEXITED(proceso->signalValue) && term){
+				removeItem(pos,processes);
+				break;
+			}
+			else if(WIFSIGNALED(proceso->signalValue) && sig){
+				removeItem(pos,processes);
+				break;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -1633,6 +1656,7 @@ cm_entrada cm_tabla[] = {
 	{"fork", cmdFork, "forkea cosas"},
 	{"execute", cmdExecute, "executea cosas"},
 	{"listjobs", cmdListjobs, "listjobea cosas"},
+	{"deljobs", cmdListjobs, "deljobea cosas"},
 	{NULL, NULL}
 };
 
