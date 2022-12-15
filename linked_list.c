@@ -113,9 +113,10 @@ bool insertProcessData(tProcessData d, tList *L) {
     
     //strcpy(tProcessData -> commandLine, d.commandLine);
     //strcpy(tProcessData -> date, d.date);
-    //strcpy(tProcessData -> status, d.status);
+    strcpy(tProcessData -> status, d.status);
     tProcessData -> PID = d.PID;
     tProcessData -> signalValue = d.signalValue;
+    tProcessData -> p = d.p;
     //tProcessData -> priority = d.priority;
 
 	insertItem(tProcessData, L);
