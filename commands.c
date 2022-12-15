@@ -1352,6 +1352,15 @@ int cmdExecute() {
 		if (execve(path, args2, args3) == -1) {perror("execve"); return -1;}
 	}
 
+	for (int j = 0; j < numtrozos; j++) {
+		free(args3[j]);
+		free(args2[j]);
+	}
+
+	free(args3);
+	free(args2);
+
+
 	return 0;
 }
 
@@ -1394,6 +1403,7 @@ kill -9
 */
 bool executeOnBackground(tList *L, tList *mallocs, tList *shared, tList *mmap, tList *processes) {
 	pid_t pid = fork();
+
 	tProcessData processData;
 
     if (pid == 0){
@@ -1525,7 +1535,7 @@ void imprimirProcesos(tList processes) {
 		while (pos != LNULL) {
 			processData = getItem(pos, processes);
 			
-			if (waitpid(processData -> PID, &status, WNOHANG | WUNTRACED | WCONTINUED) == -1) {perror("waitpid"); return;}
+			if (waitpid(*processData -> PID, &status, WNOHANG | WUNTRACED | WCONTINUED) == -1) {perror("waitpid"); return;}
 
 			if(WIFSTOPPED(status)){
 				printf("PAROU\n");
