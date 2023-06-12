@@ -1,19 +1,20 @@
-# SO
-Implementación de cmd custom
+# Sistemas Operativos
+Implementación de un cmd personalizado
 
-**Contenido de entregas**
-  - PO (Comando básicos)
+**Contenido**
+  - P0 (Comando básicos)
   - P1 (Sistema de ficheros)
   - P2 (Uso tipos de memoria)
+  - P3 (Procesos)
   
-### Usage
+## Como usarlo
 
-***Compile Project***
+***Compilar proyecto***
 
 	make
   	make valgrind_check
   
-***Show usage menu***
+***Mostrar menu de ayuda***
 
 	ayuda [comando]
 
